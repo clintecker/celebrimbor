@@ -4,6 +4,36 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-07-27
+
+Adoption hardening — the changes that let an established codebase with existing
+debt adopt celebrimbor without hitting a wall of exemptions.
+
+### Added
+
+- **Structure ratchet** (`celebrimbor.ratchets.structure`). The complexity,
+  cohesion, and capability gates now grandfather the breaches that exist at
+  adoption — a deliberate, reason-gated act taken in CI (`gate
+  --update-baselines --reason ...`) — and thereafter fail only *new or worsened*
+  breaches, keyed by a line-independent identity. A greenfield repo with no
+  baseline stays strict (every breach fails), so this does not weaken the gate
+  for new projects. Committed baseline + pure comparator + 10 negative fixtures.
+- Configurable structure baseline path (`[tool.celebrimbor.paths].structure_baseline`).
+
+### Changed
+
+- **`surface.completeness` fails loud on a config mismatch.** A surface map whose
+  rows match zero inventory callables (the wrong-`source` signature) now
+  **refuses** with the real cause, instead of reporting "0/N accounted" and a
+  wall of uncovered findings.
+- **Naming inference drops the ambiguous `check_` verifier prefix.** `check_digit`
+  (a checksum noun) and `check_value` (a getter) now abstain rather than
+  misinfer as `verifier`; `verify_*` and `*_verifier` still classify real
+  verifiers.
+- **A package-dir source's root `__init__` is named by its package** (e.g.
+  `press`) rather than the empty string, which surfaced as a confusing
+  `module ''` in the completeness gate.
+
 ## [0.1.0] — 2026-07-27
 
 First release. An omakase quality harness that makes every unit carry its own
@@ -35,4 +65,5 @@ falsifier and the gate fail closed.
   configurable ledger paths for adopters with an existing layout.
 - 129 tests, including a negative fixture for every gate.
 
+[0.2.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.0
 [0.1.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.1.0
