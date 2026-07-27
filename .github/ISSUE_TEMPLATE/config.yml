@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://clintecker.github.io/celebrimbor/
+    about: Concepts, every gate, adoption guide, and the CLI/config reference.
+  - name: Security report
+    url: https://github.com/clintecker/celebrimbor/security/advisories/new
+    about: Please report vulnerabilities privately, not as a public issue.

@@ -1,0 +1,85 @@
+site_name: celebrimbor
+site_description: >-
+  An omakase quality harness that makes every unit of your application carry its
+  own falsifier — and makes the gate fail closed.
+site_url: https://clintecker.github.io/celebrimbor/
+repo_url: https://github.com/clintecker/celebrimbor
+repo_name: clintecker/celebrimbor
+copyright: Copyright &copy; 2026 Clint Ecker — MIT License
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.instant
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Concepts:
+      - Why celebrimbor: concepts/why.md
+      - The thesis: concepts/thesis.md
+      - Roles & obligations: concepts/roles.md
+      - Fail closed: concepts/fail-closed.md
+  - The gate:
+      - Tiers: gate/tiers.md
+      - Tier 0 — the ladder: gate/tier-0.md
+      - Surface roles: gate/surface.md
+      - Capabilities: gate/capabilities.md
+      - Ledgers: gate/ledgers.md
+      - Ratchets: gate/ratchets.md
+      - Fixtures & markers: gate/fixtures.md
+  - Guides:
+      - Adopting an existing app: guides/adoption.md
+      - Writing custom checks: guides/custom-checks.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Configuration: reference/configuration.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/clintecker/celebrimbor

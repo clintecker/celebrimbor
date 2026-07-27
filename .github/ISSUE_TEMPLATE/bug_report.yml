@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in celebrimbor behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The single most useful thing you can give us is the
+        smallest input that reproduces the problem — ideally one that could
+        become a negative fixture.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did celebrimbor do, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: The smallest project, config, or input that triggers it. Commands you ran.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: celebrimbor version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12"
+    validations:
+      required: true
+  - type: textarea
+    id: gate-output
+    attributes:
+      label: Gate output
+      description: Relevant output from `celebrimbor gate ... --plain`, if any.
+      render: text

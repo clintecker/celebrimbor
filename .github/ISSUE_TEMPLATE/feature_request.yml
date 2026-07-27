@@ -1,0 +1,25 @@
+name: Feature request
+description: Propose a new gate, capability, or improvement.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What claim can code currently make that celebrimbor cannot contradict?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should the gate check, and what should turn it red?
+    validations:
+      required: true
+  - type: textarea
+    id: falsifier
+    attributes:
+      label: How would it be falsified?
+      description: |
+        Every gate carries a negative fixture proving it can turn red. What would
+        that fixture look like for this proposal?

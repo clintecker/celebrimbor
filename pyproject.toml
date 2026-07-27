@@ -31,6 +31,7 @@ dependencies = [
 [project.optional-dependencies]
 tier0 = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0", "coverage[toml]>=7.6"]
 full = ["mutmut>=3.0", "pre-commit>=3.8"]
+docs = ["mkdocs-material>=9.5"]
 dev = [
   "ruff>=0.6",
   "mypy>=1.11",

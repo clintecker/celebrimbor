@@ -1,0 +1,91 @@
+# Configuration reference
+
+Configuration is for the **exceptions only** — convention supplies the rest.
+Every setting has a default that works on a conventionally-laid-out project, and
+the config is optional. If you need config to get started, the conventions are
+wrong, and that is a bug to report, not a knob to turn.
+
+Settings live under `[tool.celebrimbor]` in `pyproject.toml`, or in a dedicated
+`celebrimbor.toml` (which takes precedence).
+
+## Layout
+
+```toml
+[tool.celebrimbor]
+source = "src"                 # source prefix (inferred if omitted)
+tests = "tests"
+known_bad = "tests/known-bad"
+```
+
+If a config file exists but is malformed, celebrimbor **refuses** — it never
+falls back to defaults, because you asked for something specific and silently
+doing something else is the estimating behavior the harness forbids.
+
+## Environment
+
+```toml
+[tool.celebrimbor]
+trusted_environment = true     # a missing tool is red, not a skip
+pinned_environment = true      # ratchets may baseline here
+```
+
+Both default to a CI signal (`CI=1`, or the usual CI env vars, or
+`CELEBRIMBOR_TRUSTED=1`). You rarely set these by hand — CI sets them for you.
+
+## Ledger paths
+
+Point celebrimbor at existing ledgers instead of moving them under
+`.celebrimbor/`. This is the hook that lets a project with an established
+`quality/` directory adopt without reorganizing.
+
+```toml
+[tool.celebrimbor.paths]
+surfaces = "quality/surfaces.yaml"
+invariants = "quality/invariants.yaml"
+producers = "quality/producers.yaml"
+coverage_baseline = "quality/coverage-baseline.yaml"
+mutation_baseline = "quality/mutation-baseline.yaml"
+```
+
+An unknown key here is an error, not ignored — a typo'd override would leave
+celebrimbor reading the default location while you believed it was pointed
+elsewhere.
+
+## Structure budgets
+
+```toml
+[tool.celebrimbor.limits]
+complexity = 10
+nesting = 4
+max_statements = 50
+max_params = 5              # positional, excluding self/cls
+max_keyword_params = 8
+max_returns = 8
+max_function_lines = 80
+max_file_lines = 500
+max_domains_per_file = 1
+max_public_callables = 20
+```
+
+Every value is a ceiling. An unknown limit key is an error — a silently-dropped
+typo reads as a configured budget that is quietly not enforced.
+
+## Other
+
+```toml
+[tool.celebrimbor]
+min_coverage_floor = 60.0      # the low-floor meta-ratchet threshold
+formatter = "ruff-format"
+mutation_tool = "mutmut"
+exclude = ["*/generated/*"]    # globs excluded from the surface inventory
+disabled_checks = ["celebrimbor.mutation"]   # exceptions, on the record
+```
+
+Disabling a check is visible in every run — an exception, not a hiding place.
+
+## State directory
+
+By default celebrimbor keeps ratified ledgers and baselines under `.celebrimbor/`
+in your repo. These are **committed** — they are the record of your team's
+ratified judgments and your ratcheted history, not a cache. The only thing that
+belongs in `.gitignore` is `.celebrimbor/cache/`.
