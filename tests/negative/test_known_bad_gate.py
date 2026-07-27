@@ -1,0 +1,132 @@
+"""Negative fixtures for the known-bad provenance auditor.
+
+These run real ruff on real deliberately-wrong files — the whole point of a
+known-bad fixture is that the rule genuinely fires, and a canned checker output
+would defeat it exactly the way this gate exists to prevent.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from celebrimbor.commodity.tools import available
+from celebrimbor.result import Verdict
+from tests.conftest import Project
+
+pytestmark = pytest.mark.negative
+
+_ID = "celebrimbor.known_bad"
+needs_ruff = pytest.mark.skipif(not available("ruff"), reason="ruff is not installed")
+
+
+def codes(result: object) -> set[str]:
+    return {f.code for f in result.findings if f.code}  # type: ignore[attr-defined]
+
+
+@needs_ruff
+def test_declared_and_actually_rejected_passes(project: Project) -> None:
+    """The proving path: an unused import, declared, and ruff really flags F401."""
+    project.write("tests/known-bad/unused_import.py", "import os\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        unused_import.py:
+          checker: ruff
+          diagnostic: F401
+          why: proves the unused-import rule is enabled
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.PASS
+
+
+@needs_ruff
+def test_known_bad_file_not_actually_rejected_is_red(project: Project) -> None:
+    """A file declared bad that the checker does not actually reject with the code.
+
+    Here the file is declared to prove F401 (unused import) but is in fact
+    clean of that rule — so the rule this fixture claims to prove is not firing,
+    which is exactly the silent-disable this gate catches.
+    """
+    project.write(
+        "tests/known-bad/supposedly_bad.py",
+        '"""A perfectly fine file masquerading as a falsifier."""\n\n\ndef ok() -> int:\n    return 1\n',
+    )
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        supposedly_bad.py:
+          checker: ruff
+          diagnostic: F401
+          why: claims to prove unused-import detection, but does not
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-not-rejected" in codes(result)
+
+
+def test_orphan_file_without_entry_is_red(project: Project) -> None:
+    """A known-bad file nobody declared: we do not know what it proves."""
+    project.write("tests/known-bad/mystery.py", "import os\n")
+    project.write("tests/known-bad/expected.yaml", "{}\n")
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-orphan-file" in codes(result)
+
+
+def test_stale_entry_for_missing_file_is_red(project: Project) -> None:
+    """An entry naming a file that is gone proves nothing while looking like it does."""
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        deleted_fixture.py:
+          checker: ruff
+          diagnostic: F401
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-stale-entry" in codes(result)
+
+
+def test_wrong_diagnostic_is_red(project: Project) -> None:
+    """Being caught by *some* rule is not enough; it must be the named one."""
+    project.write("tests/known-bad/unused_import.py", "import os\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        unused_import.py:
+          checker: ruff
+          diagnostic: E501
+          why: wrong diagnostic on purpose — this is an unused import, not a long line
+        """,
+    )
+    if not available("ruff"):
+        pytest.skip("ruff is not installed")
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-not-rejected" in codes(result)
+
+
+def test_absent_directory_skips(project: Project) -> None:
+    """No known-bad directory means opt-out, which is a skip, not a pass."""
+    result = project.run(_ID)
+    assert result.verdict is Verdict.SKIPPED
+    assert not result.proved
+
+
+def test_malformed_expected_refuses(project: Project) -> None:
+    """An entry missing its checker cannot be audited, so the gate refuses."""
+    project.write(
+        "tests/known-bad/thing.py",
+        "import os\n",
+    )
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        thing.py:
+          diagnostic: F401
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.REFUSED

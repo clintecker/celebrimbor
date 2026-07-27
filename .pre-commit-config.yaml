@@ -1,0 +1,16 @@
+# Managed by `celebrimbor init`. One hook, on purpose.
+#
+# The ladder is not wired here tool-by-tool: `celebrimbor gate --fast` runs
+# lint, format, types, known-bad and the surface audit in one process, in a
+# deliberate order, with one consistent report. Listing each tool separately
+# would mean two places to keep in sync and two different ideas of what
+# "passing" means.
+repos:
+  - repo: local
+    hooks:
+      - id: celebrimbor-gate
+        name: celebrimbor gate --fast
+        entry: celebrimbor gate --fast
+        language: system
+        pass_filenames: false
+        always_run: true
