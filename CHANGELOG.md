@@ -4,6 +4,22 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] — 2026-07-27
+
+### Added
+
+- **Configurable `policy_roles`** (`[tool.celebrimbor] policy_roles = [...]`) — the
+  role set the change-impact gate governs. Lets an adopter match an existing
+  harness's notion of a policy role. An unknown role name is a config error, not
+  silently ignored.
+
+### Changed
+
+- **`orchestrator` is a policy role by default.** A silent change to how a module
+  wires its dependency edges is a silent change to what the system does, so the
+  impact gate now governs orchestrators out of the box. The default policy set is
+  now `parser, normalizer, verifier, producer, adapter, orchestrator`.
+
 ## [0.2.0] — 2026-07-27
 
 Adoption hardening — the changes that let an established codebase with existing
@@ -65,5 +81,6 @@ falsifier and the gate fail closed.
   configurable ledger paths for adopters with an existing layout.
 - 129 tests, including a negative fixture for every gate.
 
+[0.2.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.0
 [0.1.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.1.0
