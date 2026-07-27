@@ -152,6 +152,8 @@ OBLIGATIONS: dict[Role, Obligation] = {
         Role.ORCHESTRATOR,
         "an interaction test over its dependency edges",
         rank=4,
+        policy=True,  # a silent change to how dependencies are wired is a silent
+        # change to what the system does — the impact gate should govern it
     ),
     Role.ADAPTER: Obligation(
         Role.ADAPTER,

@@ -100,6 +100,13 @@ class Config:
     disabled_checks: frozenset[str] = frozenset()
     """Exceptions, on the record. Disabling a check is visible in every run."""
 
+    policy_roles: tuple[str, ...] = ()
+    """Which roles the change-impact gate treats as policy-bearing — a change to
+    one of them with no governing invariant is a gap. Empty means the built-in
+    default (``celebrimbor.roles.POLICY_ROLES``). Set it to match an existing
+    harness's notion of a policy role, e.g.
+    ``policy_roles = ["verifier", "parser", "producer", "adapter", "orchestrator"]``."""
+
     # -- derived paths ------------------------------------------------------
 
     @property
@@ -263,9 +270,31 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "min_coverage_floor": _as_floor,
     "exclude": _as_str_tuple,
     "disabled_checks": _as_str_set,
+    "policy_roles": lambda value, key: _parse_policy_roles(value, key),
     "limits": lambda value, _key: _parse_limits(value),
     "paths": lambda value, _key: _parse_paths(value),
 }
+
+
+def _parse_policy_roles(value: Any, key: str) -> tuple[str, ...]:
+    """Validate ``policy_roles`` against the real role names, fail loud on a typo.
+
+    A misspelled role here would silently shrink what the impact gate governs —
+    the adopter would believe a role is watched when it is not — so an unknown
+    name is an error, not ignored.
+    """
+    from .roles import Role
+
+    names = _expect_str_list(value, key)
+    valid = {r.value for r in Role}
+    unknown = [n for n in names if n not in valid]
+    if unknown:
+        raise ConfigError(
+            f"{key}: unknown role(s) {', '.join(sorted(unknown))}. "
+            f"Valid roles: {', '.join(sorted(valid))}"
+        )
+    return tuple(names)
+
 
 _KNOWN_PATHS = frozenset(
     {

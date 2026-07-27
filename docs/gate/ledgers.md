@@ -77,7 +77,9 @@ git diff  →  the role of each changed module  →  the invariant that owns it 
 ```
 
 A changed policy-role module with no invariant naming it as an enforcer is the
-gap, and it reddens. This surfaces the silent alteration of a guarantee, made in
+gap, and it reddens. The policy roles are `parser`, `normalizer`, `verifier`,
+`producer`, `adapter`, and `orchestrator` by default; set `policy_roles` in
+config to match an existing harness's set. This surfaces the silent alteration of a guarantee, made in
 a place with no invariant watching it.
 
 !!! important "Fail closed on an unknowable diff"

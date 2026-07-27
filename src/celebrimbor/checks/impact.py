@@ -72,7 +72,20 @@ def _governed_modules(ledger: InvariantLedger | None) -> set[str]:
     return ledger.enforcer_modules() if ledger is not None else set()
 
 
-def _policy_role_of(smap: SurfaceMap, module: str) -> Role | None:
+def _policy_roles(ctx: Context) -> frozenset[Role]:
+    """The policy-role set for this run: the config override, or the default.
+
+    Lets an adopter match an existing harness's notion of a policy role without
+    forking the taxonomy. An empty override falls back to
+    :data:`celebrimbor.roles.POLICY_ROLES`.
+    """
+    configured = ctx.config.policy_roles
+    if not configured:
+        return POLICY_ROLES
+    return frozenset(Role.parse(name) for name in configured)
+
+
+def _policy_role_of(smap: SurfaceMap, module: str, policy: frozenset[Role]) -> Role | None:
     """The module's policy-bearing role, if it has one.
 
     Uses ``effective_roles`` so an override-introduced policy role counts —
@@ -80,7 +93,7 @@ def _policy_role_of(smap: SurfaceMap, module: str) -> Role | None:
     policy change.
     """
     for role in smap.effective_roles(module):
-        if role in POLICY_ROLES:
+        if role in policy:
             return role
     return None
 
@@ -116,9 +129,10 @@ def check_impact(ctx: Context) -> CheckResult:
         )
 
     governed = _governed_modules(ledger)
+    policy = _policy_roles(ctx)
     findings: list[Finding] = []
     for module, path in sorted(changed.items()):
-        role = _policy_role_of(smap, module)
+        role = _policy_role_of(smap, module, policy)
         if role is not None and module not in governed:
             findings.append(
                 Finding(

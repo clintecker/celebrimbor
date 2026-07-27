@@ -167,3 +167,98 @@ def test_override_introduced_policy_change_is_caught(project: Project) -> None:
     result = _run_with_diff(project, ("src/app/mixed.py",))
     assert result.verdict is Verdict.FAIL
     assert any("app.mixed" in f.message and "adapter" in f.message for f in result.findings)
+
+
+def test_orchestrator_is_a_policy_role_by_default(project: Project) -> None:
+    """A changed orchestrator with no governing invariant is a gap by default.
+
+    Rewiring dependency edges is a silent behaviour change, so the impact gate
+    governs orchestrators out of the box.
+    """
+    project.module(
+        "app.flow",
+        '''
+        """Coordinating."""
+
+        from __future__ import annotations
+
+
+        def run_pipeline(load: object, transform: object, save: object) -> None:
+            """Wire the steps together."""
+            save(transform(load()))
+        ''',
+    )
+    project.surfaces(
+        """
+        version: 1
+        modules:
+          app.flow:
+            role: orchestrator
+            status: ratified
+        """
+    )
+    _pin_all(project)
+    result = _run_with_diff(project, ("src/app/flow.py",))
+    assert result.verdict is Verdict.FAIL
+    assert any("orchestrator" in f.message for f in result.findings)
+
+
+def test_policy_roles_config_narrows_the_governed_set(project: Project) -> None:
+    """An adopter can match an existing harness's policy-role set via config."""
+    project.write(
+        "pyproject.toml",
+        """
+        [project]
+        name = "acme"
+        version = "0.0.0"
+
+        [tool.celebrimbor]
+        source = "src"
+        policy_roles = ["verifier", "parser", "producer", "adapter"]
+        """,
+    )
+    project.module(
+        "app.flow",
+        '''
+        """Coordinating."""
+
+        from __future__ import annotations
+
+
+        def run_pipeline(load: object, save: object) -> None:
+            """Wire steps."""
+            save(load())
+        ''',
+    )
+    project.surfaces(
+        """
+        version: 1
+        modules:
+          app.flow:
+            role: orchestrator
+            status: ratified
+        """
+    )
+    _pin_all(project)
+    # orchestrator dropped from the policy set -> its change is not governed -> green
+    result = _run_with_diff(project, ("src/app/flow.py",))
+    assert result.verdict is Verdict.PASS
+
+
+def test_unknown_policy_role_is_a_config_error(project: Project) -> None:
+    """A typo'd policy role would silently shrink governance, so it's rejected."""
+    from celebrimbor.config import Config, ConfigError
+
+    project.write(
+        "pyproject.toml",
+        """
+        [project]
+        name = "acme"
+        version = "0.0.0"
+
+        [tool.celebrimbor]
+        policy_roles = ["verifer"]
+        """,
+    )
+    with pytest.raises(ConfigError, match="unknown role"):
+        Config.load(project.root)

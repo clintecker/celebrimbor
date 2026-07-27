@@ -79,6 +79,12 @@ formatter = "ruff-format"
 mutation_tool = "mutmut"
 exclude = ["*/generated/*"]    # globs excluded from the surface inventory
 disabled_checks = ["celebrimbor.mutation"]   # exceptions, on the record
+
+# Which roles the change-impact gate governs. Empty = the default
+# (parser, normalizer, verifier, producer, adapter, orchestrator). Set it to
+# match an existing harness's notion of a policy role. An unknown role name is
+# an error, not ignored — a typo would silently shrink what is governed.
+policy_roles = ["verifier", "parser", "producer", "adapter", "orchestrator"]
 ```
 
 Disabling a check is visible in every run — an exception, not a hiding place.
