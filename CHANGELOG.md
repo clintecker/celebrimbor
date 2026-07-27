@@ -4,6 +4,20 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-07-27
+
+### Added
+
+- **Import-health gate** (`celebrimbor.imports`, opt-in via `import_check = true`).
+  The one gate that imports the application — every other check is AST-only. It
+  imports each module in an **isolated subprocess** (never the gate's own
+  process, so the "classify without importing" guarantee is never compromised)
+  and reports (a) any module that does not import, and (b) any import-time side
+  effect — a file write, socket, or process spawn during import. The probe guards
+  those effects, so it detects *and prevents* them: a module that would write a
+  file on import does not actually write one during the check. Off by default,
+  because it runs your code.
+
 ## [0.2.1] — 2026-07-27
 
 ### Added
@@ -81,6 +95,7 @@ falsifier and the gate fail closed.
   configurable ledger paths for adopters with an existing layout.
 - 129 tests, including a negative fixture for every gate.
 
+[0.3.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.3.0
 [0.2.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.0
 [0.1.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.1.0

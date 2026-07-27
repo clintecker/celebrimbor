@@ -80,6 +80,12 @@ class Config:
     formatter: str = "ruff-format"
     mutation_tool: str = "mutmut"
 
+    import_check: bool = False
+    """Opt in to the runtime import-health check. Off by default because it is
+    the one check that *imports* the application (everything else is AST-only),
+    so a project must choose it. When true, every module is imported in an
+    isolated subprocess and any import error or import-time side effect is red."""
+
     limits: Limits = field(default_factory=Limits)
     """Structural budgets — complexity, nesting, file length, classes per
     module. Configured as ``[tool.celebrimbor.limits]``; every key is optional
@@ -267,6 +273,7 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "mutation_tool": _as_str,
     "trusted_environment": _as_bool,
     "pinned_environment": _as_bool,
+    "import_check": _as_bool,
     "min_coverage_floor": _as_floor,
     "exclude": _as_str_tuple,
     "disabled_checks": _as_str_set,

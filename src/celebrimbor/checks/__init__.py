@@ -29,6 +29,7 @@ CHECK_MODULES: tuple[str, ...] = (
     "producers",
     "invariants",
     "impact",
+    "imports",
     "ratchets",
     "commodity",
     "terminal",

@@ -77,6 +77,7 @@ typo reads as a configured budget that is quietly not enforced.
 min_coverage_floor = 60.0      # the low-floor meta-ratchet threshold
 formatter = "ruff-format"
 mutation_tool = "mutmut"
+import_check = true            # opt in to the runtime import-health gate (it imports your code)
 exclude = ["*/generated/*"]    # globs excluded from the surface inventory
 disabled_checks = ["celebrimbor.mutation"]   # exceptions, on the record
 

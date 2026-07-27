@@ -47,6 +47,29 @@ this is where quiet dishonesty accumulates:
 Celebrimbor's own test suite obeys this grammar. The check is AST-based, so it
 does not need to run your tests to catch a vacuous one.
 
+## Import health (opt-in)
+
+`celebrimbor.imports` is the one gate that *imports* your application. Everything
+else is AST-only — deliberately, so the completeness guarantee can never fall
+behind code that fails to import. This check chooses to import, and does so in an
+**isolated subprocess** on the far side of a boundary the AST inventory never
+crosses. It is **opt-in** (`import_check = true`), off by default, because it
+runs your code.
+
+When on, it reports two things the AST cannot see:
+
+- **A module that does not import** — an import-time `NameError`, a missing
+  optional dependency, a circular import that only bites at import time.
+- **An import-time side effect** — a module that writes a file, opens a socket,
+  or spawns a process *while importing*. The probe installs guards before
+  importing, so it both detects the effect and *prevents* it: a module that
+  would write a file on import does not actually write one during the check.
+
+```toml
+[tool.celebrimbor]
+import_check = true
+```
+
 ## Utilities
 
 Two supporting utilities ship in the package for your own tests to import (they
