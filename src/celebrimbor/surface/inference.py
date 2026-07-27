@@ -63,7 +63,11 @@ def _rule(regex: str, role: Role, why: str) -> NameRule:
 # the safe-direction fold picks among them, so ordering is for readability
 # rather than precedence.
 NAME_RULES: tuple[NameRule, ...] = (
-    _rule(r"^(verify|validate|assert|ensure|check)_", Role.VERIFIER, "verify_* prefix"),
+    # `check_` is deliberately NOT here: `check_digit` (a checksum noun), `check_value`
+    # (a getter), `check_box` — "check" is as often a noun as the verb. Inferring
+    # verifier from it produces false friends, so inference abstains on `check_*`
+    # and a real verifier is caught by `verify_*` / `*_verifier` instead.
+    _rule(r"^(verify|validate|assert|ensure)_", Role.VERIFIER, "verify_* prefix"),
     _rule(r"(_verifier|_validator|_checker)$", Role.VERIFIER, "*_verifier suffix"),
     _rule(r"^(parse|load|read|decode|deserialize|from)_", Role.PARSER, "parse_* prefix"),
     _rule(r"(_parser|_loader|_reader|_decoder)$", Role.PARSER, "*_parser suffix"),

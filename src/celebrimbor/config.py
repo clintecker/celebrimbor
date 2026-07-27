@@ -137,6 +137,10 @@ class Config:
         return self._path("mutation_baseline", self.state_dir / "baselines" / "mutation.yaml")
 
     @property
+    def structure_baseline_path(self) -> Path:
+        return self._path("structure_baseline", self.state_dir / "baselines" / "structure.yaml")
+
+    @property
     def source_dir(self) -> Path:
         return self.root / self.source
 
@@ -264,7 +268,14 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
 }
 
 _KNOWN_PATHS = frozenset(
-    {"surfaces", "invariants", "producers", "coverage_baseline", "mutation_baseline"}
+    {
+        "surfaces",
+        "invariants",
+        "producers",
+        "coverage_baseline",
+        "mutation_baseline",
+        "structure_baseline",
+    }
 )
 
 

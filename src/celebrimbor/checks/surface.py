@@ -100,6 +100,26 @@ def check_surface_completeness(ctx: Context) -> CheckResult:
     inv = get_inventory(ctx)
     result = audit(inv, smap)
 
+    # Config mismatch, not 149 real gaps. A surface map with rows that match
+    # *nothing* in the inventory means the map and the source tree are talking
+    # about different modules — almost always a wrong `source` prefix (e.g. the
+    # map was written for `src/press` but `source` defaults to `src`). Reporting
+    # "0/631 accounted" with a wall of uncovered findings buries the actual
+    # cause, so fail loud with the real one.
+    if smap.rows and result.covered() == 0 and result.total_callables > 0:
+        return CheckResult.refused(
+            _COMPLETENESS,
+            f"the surface map matches none of the {result.total_callables} callables found",
+            reason=(
+                f"the map has {len(smap.rows)} row(s) but not one corresponds to a module "
+                f"under source={ctx.config.source!r}. The map and the inventory describe "
+                "different modules — check that `source` (and any `[tool.celebrimbor.paths]`) "
+                "point at the tree the map was written for."
+            ),
+            remedy=f"set `source` in celebrimbor.toml; the map's modules look like: "
+            f"{', '.join(sorted(smap.modules())[:3])}…",
+        )
+
     # Unparseable source is a refusal, not a failure. We do not know what is in
     # those modules, and reporting them as "missing a row" would understate it.
     if result.must_refuse:

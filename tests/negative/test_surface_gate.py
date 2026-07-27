@@ -17,7 +17,7 @@ from __future__ import annotations
 import pytest
 
 from celebrimbor.result import Verdict
-from tests.conftest import Project
+from tests.conftest import Project, _pin_all
 
 pytestmark = pytest.mark.negative
 
@@ -225,4 +225,60 @@ def test_explicit_override_silences_the_conflict(toy: Project) -> None:
             status: ratified
         """
     )
+    assert toy.run(_NAMING).verdict is Verdict.PASS
+
+
+def test_config_mismatch_refuses_loud_not_silent(project: Project) -> None:
+    """#1: a map that matches nothing is a config error, not 149 real gaps.
+
+    A surface map written for one source layout, read against another (wrong
+    `source` prefix), matches zero callables. That must refuse with the real
+    cause, not report '0/N accounted' with a wall of uncovered findings.
+    """
+    project.module("app.thing", '"""T."""\n\n\ndef go() -> int:\n    """G."""\n    return 1\n')
+    # A map describing modules that do not exist under `source`.
+    project.surfaces(
+        """
+        version: 1
+        modules:
+          totally.different.module:
+            role: pure
+            status: ratified
+        """
+    )
+    result = project.run(_COMPLETENESS)
+    assert result.verdict is Verdict.REFUSED
+    assert "matches none" in result.summary
+    assert "source" in (result.reason or "")
+
+
+def test_check_noun_is_not_a_naming_conflict(toy: Project) -> None:
+    """#2: check_digit/check_value are nouns, not verifiers — no false naming flag."""
+    toy.module(
+        "app.parsing",
+        '''
+        """Parsing, with a checksum helper."""
+
+        from __future__ import annotations
+
+
+        class MalformedError(ValueError):
+            """Bad input."""
+
+
+        def parse_row(raw: str) -> dict[str, str]:
+            """Parse `k=v`, refusing anything else."""
+            if "=" not in raw:
+                raise MalformedError(raw)
+            key, _, value = raw.partition("=")
+            return {key: value}
+
+
+        def check_digit(code: str) -> str:
+            """The checksum digit of a code — a noun, not a verifier."""
+            return code[-1]
+        ''',
+    )
+    _pin_all(toy)
+    # check_digit must not be flagged as "named for verifier"; the gate stays green.
     assert toy.run(_NAMING).verdict is Verdict.PASS

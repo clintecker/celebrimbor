@@ -232,6 +232,13 @@ def dotted_name(rel_path: Path, source_prefix: str) -> str:
         parts = parts[len(prefix_parts) :]
     if parts and parts[-1] == "__init__":
         parts.pop()
+    if not parts:
+        # The root ``__init__.py`` of a package the source prefix points *at*
+        # (e.g. source = "src/press", file = "src/press/__init__.py"). Stripping
+        # the prefix leaves nothing, but the module is real and public — it is
+        # the package itself. Name it by the package, never the empty string,
+        # which would surface as a confusing `module ''` in the completeness gate.
+        return prefix_parts[-1] if prefix_parts else ""
     return ".".join(parts)
 
 
