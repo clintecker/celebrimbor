@@ -1,0 +1,3 @@
+# Each entry: which checker must reject this file, and with what diagnostic.
+# Both directions are audited — orphan files and stale entries are red.
+{}

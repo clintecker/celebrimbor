@@ -1,0 +1,28 @@
+name: celebrimbor gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The impact gate diffs against the merge base; fetch enough history.
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: pip install -e ".[dev]"
+      - name: tests under coverage
+        # Produce the .coverage data file the coverage ratchet reads.
+        run: coverage run -m pytest
+      - name: gate (PR tier)
+        # CI sets CI=1, so this is the pinned environment: ratchets baseline
+        # on the first run and enforce thereafter, and a missing tool is a
+        # hard failure rather than a skip.
+        run: celebrimbor gate
