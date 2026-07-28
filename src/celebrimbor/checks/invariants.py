@@ -46,19 +46,19 @@ def _enforcer_finding(inv: Invariant, inventory: Inventory) -> Finding | None:
     return None
 
 
-def _proof_finding(inv: Invariant, root: Path) -> Finding | None:
-    """Does a critical invariant's negative proof exist on disk?"""
-    if inv.proof_path is None or (root / inv.proof_path).exists():
-        return None
-    return Finding(
-        message=(
-            f"invariant {inv.name!r} names negative proof {inv.negative_proof!r}, which does "
-            "not exist"
-        ),
-        path=Path(inv.proof_path),
-        code="invariant-proof-absent",
-        hint="a critical promise must keep a real proof its enforcer rejects a violation",
-    )
+def _proof_findings(inv: Invariant, root: Path) -> list[Finding]:
+    """Every named negative proof must exist on disk — a named-but-gone proof is
+    drift, exactly like a renamed enforcer, so each is checked, not just one."""
+    return [
+        Finding(
+            message=f"invariant {inv.name!r} names negative proof {proof!r}, which does not exist",
+            path=Path(proof_path),
+            code="invariant-proof-absent",
+            hint="a critical promise must keep a real proof its enforcer rejects a violation",
+        )
+        for proof, proof_path in zip(inv.negative_proofs, inv.proof_paths, strict=True)
+        if not (root / proof_path).exists()
+    ]
 
 
 @check(
@@ -93,8 +93,10 @@ def check_invariants(ctx: Context) -> CheckResult:
     inventory = get_inventory(ctx)
     findings: list[Finding] = []
     for inv in ledger:
-        candidates = (_enforcer_finding(inv, inventory), _proof_finding(inv, ctx.root))
-        findings.extend(f for f in candidates if f is not None)
+        enforcer = _enforcer_finding(inv, inventory)
+        if enforcer is not None:
+            findings.append(enforcer)
+        findings.extend(_proof_findings(inv, ctx.root))
 
     if findings:
         return CheckResult.failed(_ID, f"{len(findings)} invariant-ledger defect(s)", findings)

@@ -86,6 +86,28 @@ this is where quiet dishonesty accumulates:
 Celebrimbor's own test suite obeys this grammar. The check is AST-based, so it
 does not need to run your tests to catch a vacuous one.
 
+### Citing limitations
+
+By default an `xfail`/`skip` need only *have* a reason. Opt in to more:
+
+```toml
+[tool.celebrimbor]
+markers_cite_limitations = true
+```
+
+Now the reason must **cite a limitation declared in the invariant ledger** — one
+of the `limitations:` ids on your invariants. This is the difference between a
+*known gap* (catalogued, reviewable debt tied to a promise) and a shrug:
+
+```python
+@pytest.mark.skip(reason="soft-deleted-customers: not handled until v2")  # cites a limitation → ok
+@pytest.mark.skip(reason="flaky, will look later")                        # a shrug → red
+```
+
+It fails closed: turn it on with no invariant ledger, or no `limitations`
+declared, and the gate refuses rather than reddening every reason — there is
+nothing to cite, so the flag cannot mean anything yet.
+
 ## Import health (opt-in)
 
 `celebrimbor.imports` is the one gate that *imports* your application. Everything

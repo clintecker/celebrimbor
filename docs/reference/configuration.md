@@ -109,6 +109,7 @@ min_coverage_floor = 60.0      # the low-floor meta-ratchet threshold
 formatter = "ruff-format"
 mutation_tool = "mutmut"
 import_check = true            # opt in to the runtime import-health gate (it imports your code)
+markers_cite_limitations = true  # xfail/skip reason= must cite a declared invariant limitation
 exclude = ["*/generated/*"]    # globs excluded from the surface inventory
 disabled_checks = ["celebrimbor.mutation"]   # exceptions, on the record
 

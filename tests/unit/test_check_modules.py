@@ -54,7 +54,7 @@ def test_terminal_check_sorts_last_even_when_registered_first() -> None:
     @check(
         id="app.terminal", title="terminal", terminal=True, falsified_by="tests/x.py", registry=reg
     )
-    def _terminal(ctx: object) -> CheckResult:
+    def _terminal(_ctx: object) -> CheckResult:
         return CheckResult.passed("app.terminal", "ok")
 
     @check(
@@ -63,7 +63,7 @@ def test_terminal_check_sorts_last_even_when_registered_first() -> None:
         falsified_by="tests/x.py",
         registry=reg,
     )
-    def _late(ctx: object) -> CheckResult:
+    def _late(_ctx: object) -> CheckResult:
         return CheckResult.passed("app.late", "ok")
 
     order = [spec.id for spec in reg]

@@ -126,3 +126,97 @@ def test_no_tests_directory_skips(tmp_path_factory: pytest.TempPathFactory) -> N
     proj.pyproject()
     result = proj.run(_ID)
     assert result.verdict is Verdict.SKIPPED
+
+
+# --- markers_cite_limitations (issue #11) ---------------------------------
+
+_STRICT = """
+    [project]
+    name = "fixture"
+    version = "0.0.0"
+
+    [tool.celebrimbor]
+    source = "src"
+    markers_cite_limitations = true
+    """
+
+_LEDGER = """
+    version: 1
+    invariants:
+      editorial-battery:
+        statement: the editorial battery runs on every chapter
+        enforced_by: app.editorial:run_battery
+        limitations:
+          - editorial-battery-partial
+    """
+
+
+def test_xfail_citing_a_declared_limitation_passes(project: Project) -> None:
+    """A suppressed test that cites a catalogued limitation is documented debt."""
+    project.pyproject(_STRICT)
+    project.write(".celebrimbor/invariants.yaml", _LEDGER)
+    project.write(
+        "tests/test_editorial.py",
+        """
+        import pytest
+
+
+        @pytest.mark.skip(reason="editorial-battery-partial: emoji rule not wired yet")
+        def test_emoji_rule() -> None:
+            assert True
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.PASS
+
+
+def test_skip_that_cites_no_limitation_is_red(project: Project) -> None:
+    """A shrug is not a citation: the reason must reference a declared limitation."""
+    project.pyproject(_STRICT)
+    project.write(".celebrimbor/invariants.yaml", _LEDGER)
+    project.write(
+        "tests/test_editorial.py",
+        """
+        import pytest
+
+
+        @pytest.mark.skip(reason="flaky, will look later")
+        def test_emoji_rule() -> None:
+            assert True
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "marker-skip-uncited-limitation" in codes(result)
+
+
+def test_strict_mode_without_a_ledger_refuses(project: Project) -> None:
+    """Opt in to citing limitations with none declared: fail closed, not silently."""
+    project.pyproject(_STRICT)
+    project.write(
+        "tests/test_editorial.py",
+        """
+        import pytest
+
+
+        @pytest.mark.skip(reason="anything")
+        def test_thing() -> None:
+            assert True
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.REFUSED
+
+
+def test_default_is_lenient_any_reason_passes(project: Project) -> None:
+    """Off by default: a reason is required, but need not cite a limitation."""
+    project.write(
+        "tests/test_editorial.py",
+        """
+        import pytest
+
+
+        @pytest.mark.skip(reason="a plain reason, uncatalogued")
+        def test_thing() -> None:
+            assert True
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.PASS

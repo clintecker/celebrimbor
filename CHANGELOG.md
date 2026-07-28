@@ -4,6 +4,32 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.10.0 — 2026-07-28
+
+Two generic invariant-ledger enhancements, so an app can unify its ledger onto
+celebrimbor's without dropping anything (issue #11).
+
+### Added
+
+- **An invariant can keep several negative proofs.** `negative_proof` now accepts
+  a string *or a list* — an invariant can be independently falsified more than
+  one way. Each named proof must resolve (a named-but-deleted proof is drift,
+  exactly like a renamed enforcer), so this is stricter than "at least one," not
+  looser.
+- **A `limitations` vocabulary + `markers_cite_limitations`.** An invariant may
+  declare `limitations:` — the cases the promise knowingly does not cover, as
+  ids. With `[tool.celebrimbor] markers_cite_limitations = true` (off by
+  default), an `xfail`/`skip` `reason=` must *cite* one of those declared
+  limitations, so a catalogued known-gap can't be confused with a shrug. It
+  fails closed: on with no ledger or no limitations declared, the markers gate
+  refuses rather than reddening every reason.
+
+### Changed
+
+- `ledgers.invariants.Invariant`: `negative_proof: str | None` → `negative_proofs:
+  tuple[str, ...]`, and the `proof_path` property → `proof_paths`. The YAML key
+  is unchanged (`negative_proof`, string or list); only the Python model changed.
+
 ## 0.9.0 — 2026-07-28
 
 Two more shapes of real-world known-bad checker fit now, so an app with domain

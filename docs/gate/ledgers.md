@@ -62,7 +62,11 @@ invariants:
     statement: every order references an existing customer
     enforced_by: myapp.orders:validate_order
     critical: true
-    negative_proof: tests/negative/test_orders.py::test_orphan_order_rejected
+    negative_proof:                       # one, or several — each is checked
+      - tests/negative/test_orders.py::test_orphan_order_rejected
+      - tests/negative/test_orders.py::test_deleted_customer_rejected
+    limitations:                          # what the promise knowingly does NOT cover
+      - soft-deleted-customers
   slug-is-unique:
     statement: no two posts share a slug
     enforced_by: myapp.posts:check_slug_unique
@@ -72,6 +76,13 @@ Every named `enforced_by` must resolve to a real callable, and every `critical`
 invariant must keep a real `negative_proof`. A promise whose enforcer has been
 renamed or deleted turns the gate red — a promise nobody enforces is not a
 promise.
+
+`negative_proof` may be a single string or a **list** — an invariant can be
+falsified several independent ways, and each named proof must exist (a
+named-but-deleted proof is drift, just like a renamed enforcer). `limitations`
+records the cases the promise deliberately does not cover — declared, reviewable
+debt — and, with [`markers_cite_limitations`](fixtures.md#citing-limitations),
+becomes the vocabulary a suppressed test must cite.
 
 This is the producer ledger generalized: a producer ledger is an invariant
 ledger specialized to "the artifact is correct."

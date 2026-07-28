@@ -153,7 +153,7 @@ modules:
   ledgers.invariants:
     role: parser
     status: ratified
-    pin: "f0101d4849c2"
+    pin: "a3981ec07882"
     overrides:
       render_docs: producer
   ledgers.producers:

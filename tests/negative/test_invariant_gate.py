@@ -152,3 +152,52 @@ def test_docs_render_from_the_same_data_the_gate_checks(project: Project) -> Non
     assert "order-has-customer" in docs
     assert "**(critical)**" in docs
     assert "app.orders:validate_order" in docs
+
+
+# --- multiple negative proofs (issue #11) ---------------------------------
+
+
+def test_multiple_negative_proofs_all_resolving_passes(project: Project) -> None:
+    """An invariant can be falsified several ways; each named proof is real."""
+    _project_with_enforcer(project)
+    project.write("tests/negative/test_a.py", "def test_a() -> None:\n    assert True\n")
+    project.write("tests/negative/test_b.py", "def test_b() -> None:\n    assert True\n")
+    project.write(
+        ".celebrimbor/invariants.yaml",
+        """
+        version: 1
+        invariants:
+          order-has-customer:
+            statement: every order references an existing customer
+            enforced_by: app.orders:validate_order
+            critical: true
+            negative_proof:
+              - tests/negative/test_a.py::test_a
+              - tests/negative/test_b.py::test_b
+        """,
+    )
+    assert project.run(_ID, stage=Stage.DEFAULT).verdict is Verdict.PASS
+
+
+def test_one_of_several_proofs_missing_is_red(project: Project) -> None:
+    """A named-but-deleted proof is drift, exactly like a renamed enforcer."""
+    _project_with_enforcer(project)
+    project.write("tests/negative/test_a.py", "def test_a() -> None:\n    assert True\n")
+    project.write(
+        ".celebrimbor/invariants.yaml",
+        """
+        version: 1
+        invariants:
+          order-has-customer:
+            statement: every order references an existing customer
+            enforced_by: app.orders:validate_order
+            critical: true
+            negative_proof:
+              - tests/negative/test_a.py::test_a
+              - tests/negative/test_gone.py::test_gone
+        """,
+    )
+    result = project.run(_ID, stage=Stage.DEFAULT)
+    assert result.verdict is Verdict.FAIL
+    assert "invariant-proof-absent" in codes(result)
+    assert any("test_gone.py" in f.message for f in result.findings)

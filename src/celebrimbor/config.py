@@ -113,6 +113,12 @@ class Config:
     so a project must choose it. When true, every module is imported in an
     isolated subprocess and any import error or import-time side effect is red."""
 
+    markers_cite_limitations: bool = False
+    """Opt in to stricter marker grammar: an ``xfail``/``skip`` ``reason=`` must
+    cite a limitation declared in the invariant ledger, so a *known gap* (declared,
+    reviewable debt) cannot be confused with a shrug. Off by default — the base
+    grammar only requires a reason to be present."""
+
     limits: Limits = field(default_factory=Limits)
     """Structural budgets — complexity, nesting, file length, classes per
     module. Configured as ``[tool.celebrimbor.limits]``; every key is optional
@@ -314,6 +320,7 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "trusted_environment": _as_bool,
     "pinned_environment": _as_bool,
     "import_check": _as_bool,
+    "markers_cite_limitations": _as_bool,
     "min_coverage_floor": _as_floor,
     "exclude": _as_str_tuple,
     "check_modules": _as_str_tuple,
