@@ -113,32 +113,18 @@ edited it into something more complex and never reclassified it."
 
 ```mermaid
 stateDiagram-v2
-    direction LR
     [*] --> Absent
-    Absent --> Inferred: init --surfaces<br/>(name has a signal)
+    Absent --> Inferred: init --surfaces
     Absent --> Ratified: authored by hand
-    Inferred --> Ratified: celebrimbor ratify<br/>(human confirms + pin stamped)
-    Ratified --> Unratified: code's shape drifts<br/>(pin no longer matches)
-    Unratified --> Ratified: re-ratify<br/>(human looks again)
-    note right of Absent
-        RED — a callable
-        with no row is a hole
-    end note
-    note right of Inferred
-        RED — a guess is
-        not a judgment
-    end note
-    note right of Ratified
-        GREEN
-    end note
-    note right of Unratified
-        RED — the sign-off
-        is about older code
-    end note
+    Inferred --> Ratified: ratify (confirm + pin)
+    Ratified --> Unratified: shape drifts
+    Unratified --> Ratified: re-ratify
 ```
 
-Only the ratified state is green, and the only way in is a human confirmation —
-inference and drift both leave you red.
+The states colour-code simply: **`Absent`** (a callable with no row is a hole),
+**`Inferred`** (a guess is not a judgment), and **`Unratified`** (the sign-off is
+about older code) are all **red**. Only **`Ratified`** is **green** — and the
+only way in is a human confirmation, so inference and drift both leave you red.
 
 ## The obligation rank
 

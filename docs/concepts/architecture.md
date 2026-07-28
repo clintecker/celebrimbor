@@ -7,30 +7,19 @@ the map of the territory; the pages after it zoom in.
 ## The pipeline
 
 ```mermaid
-flowchart LR
-    subgraph repo["your repository"]
-        direction TB
-        SRC["source code<br/><code>src/</code>"]
-        TST["tests<br/><code>tests/</code> · <code>known-bad/</code>"]
-        LED[".celebrimbor/<br/>surfaces · producers<br/>invariants · baselines"]
-    end
-
-    SRC -->|"parsed as AST,<br/>never imported"| INV["surface inventory<br/>every public callable"]
+flowchart TD
+    SRC["source code — src/"] -->|"parsed as AST, never imported"| INV["surface inventory<br/>every public callable"]
     INV --> MAP{{"surface map<br/>role · ratified · pinned"}}
-    LED --> MAP
-
+    LED[".celebrimbor/ ledgers<br/>surfaces · producers · invariants · baselines"] --> MAP
+    TST["tests/ · known-bad/"] --> GATE
     MAP --> GATE
-    TST --> GATE
-    SRC --> GATE
-
     subgraph GATE["the gate — fail closed"]
         direction TB
-        COMM["commodity gates<br/>lint · types · format · structure"]
-        OBL["obligation gates<br/>roles · capabilities · ledgers · ratchets"]
+        COMM["commodity gates — lint · types · format · structure"]
+        OBL["obligation gates — roles · capabilities · ledgers · ratchets"]
     end
-
-    GATE --> REP["gate report<br/>one verdict per check"]
-    REP --> EXIT(["exit 0 — every claim proved<br/>exit 1 — anything red"])
+    GATE --> REP["gate report — one verdict per check"]
+    REP --> EXIT(["exit 0 — every claim proved · exit 1 — anything red"])
 ```
 
 ## The five stages, and why each is shaped the way it is

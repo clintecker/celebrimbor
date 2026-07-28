@@ -40,18 +40,11 @@ Each stage *contains* the cheaper one, so nothing you ran at pre-commit is
 skipped later:
 
 ```mermaid
-flowchart LR
-    subgraph full["gate --full · release"]
-        direction LR
-        subgraph def["gate · pull request"]
-            direction LR
-            subgraph fast["gate --fast · pre-commit"]
-                A["commodity gates<br/>+ cheap obligation gates"]
-            end
-            B["+ coverage · invariants · impact"]
-        end
-        C["+ mutation"]
-    end
+flowchart TD
+    F["<b>--fast</b> · pre-commit<br/>commodity + cheap obligation gates"]
+    D["<b>(default)</b> · pull request<br/>everything in --fast, plus coverage · invariants · impact"]
+    U["<b>--full</b> · release<br/>everything in (default), plus mutation"]
+    F --> D --> U
 ```
 
 ## The family axis — what kind of check

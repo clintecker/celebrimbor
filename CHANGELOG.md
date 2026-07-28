@@ -4,7 +4,7 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] — 2026-07-28
+## 0.6.0 — 2026-07-28
 
 Retire the numbered "Tier 0 / Tier 1." The two check families are now named,
 not numbered, so nothing implies a "Tier 2" that will never exist.
@@ -33,7 +33,7 @@ and keeps its scale.
 - The Tier 0 page becomes **The commodity ladder**. All "Tier 0/1" prose across
   the site, README, and docstrings is retired in favour of commodity/obligation.
 
-## [0.5.0] — 2026-07-27
+## 0.5.0 — 2026-07-27
 
 Nomenclature: "tier" meant two different things. Now it means one.
 
@@ -63,7 +63,7 @@ run-depth axis is now **stage**; **tier** refers only to the gate family.
 - Tier 0 is now called "the commodity ladder" consistently (it had drifted
   between "the wedge" and "the ladder").
 
-## [0.4.0] — 2026-07-27
+## 0.4.0 — 2026-07-27
 
 celebrimbor now gates itself. The full Tier 1 obligation engine runs against
 celebrimbor's own source and ships green: 242 callables classified, ratified,
@@ -103,7 +103,7 @@ Turning it on found real defects in the tool, which are the fixes below.
   self-hosting result honestly — including the one `pending` producer and the
   CI-only ratchets.
 
-## [0.3.1] — 2026-07-27
+## 0.3.1 — 2026-07-27
 
 Evidence-check accuracy — three blind spots that forced honest roles to be
 exempted during real adoption (issue #6).
@@ -133,7 +133,7 @@ misclassifications the sharper check now surfaces.
   character), so existing ratified rows re-open once and must be re-ratified with
   `celebrimbor ratify`. This affects only projects with a committed surface map.
 
-## [0.3.0] — 2026-07-27
+## 0.3.0 — 2026-07-27
 
 ### Added
 
@@ -147,7 +147,7 @@ misclassifications the sharper check now surfaces.
   file on import does not actually write one during the check. Off by default,
   because it runs your code.
 
-## [0.2.1] — 2026-07-27
+## 0.2.1 — 2026-07-27
 
 ### Added
 
@@ -163,7 +163,7 @@ misclassifications the sharper check now surfaces.
   impact gate now governs orchestrators out of the box. The default policy set is
   now `parser, normalizer, verifier, producer, adapter, orchestrator`.
 
-## [0.2.0] — 2026-07-27
+## 0.2.0 — 2026-07-27
 
 Adoption hardening — the changes that let an established codebase with existing
 debt adopt celebrimbor without hitting a wall of exemptions.
@@ -193,7 +193,7 @@ debt adopt celebrimbor without hitting a wall of exemptions.
   `press`) rather than the empty string, which surfaced as a confusing
   `module ''` in the completeness gate.
 
-## [0.1.0] — 2026-07-27
+## 0.1.0 — 2026-07-27
 
 First release. An omakase quality harness that makes every unit carry its own
 falsifier and the gate fail closed.
@@ -223,9 +223,3 @@ falsifier and the gate fail closed.
 - **Public API** — `celebrimbor.gate()`, the `@celebrimbor.check` decorator, and
   configurable ledger paths for adopters with an existing layout.
 - 129 tests, including a negative fixture for every gate.
-
-[0.3.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.3.1
-[0.3.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.3.0
-[0.2.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.1
-[0.2.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.0
-[0.1.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.1.0

@@ -21,7 +21,7 @@ usually a config error — the gate **refuses** rather than reporting clean. A t
 that told you nothing you could read has not told you all is well:
 
 ```mermaid
-flowchart LR
+flowchart TD
     T["run ruff / mypy<br/>(your pinned version)"] --> P{parse the<br/>output}
     P -->|clean| G([pass])
     P -->|"violations found"| F([fail — with findings])

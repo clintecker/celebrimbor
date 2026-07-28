@@ -11,14 +11,11 @@ malformed file never falls back to defaults:
 
 ```mermaid
 flowchart TD
-    A{"celebrimbor.toml<br/>exists?"} -->|yes| B{"parses?"}
-    A -->|no| C{"[tool.celebrimbor]<br/>in pyproject?"}
-    B -->|yes| USE([use it])
-    B -->|no| REF([refused — red])
-    C -->|yes| D{"parses?"}
-    C -->|no| CONV([convention defaults])
-    D -->|yes| USE
-    D -->|no| REF
+    A["look for config —<br/>celebrimbor.toml, else [tool.celebrimbor] in pyproject"] --> B{found?}
+    B -->|no| CONV([convention defaults])
+    B -->|yes| C{parses?}
+    C -->|yes| USE([use it])
+    C -->|no| REF([refused — never falls back to defaults])
 ```
 
 ## Layout

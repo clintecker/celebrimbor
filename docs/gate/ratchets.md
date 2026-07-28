@@ -21,14 +21,14 @@ The decision every ratchet makes on each run:
 ```mermaid
 flowchart TD
     R([ratchet runs]) --> B{baseline<br/>exists?}
-    B -->|"no · pinned env (CI)"| REC[record it, pass]
-    B -->|"no · dev box"| SK["skip<br/>(don't baseline higher than CI will)"]
+    B -->|"no · pinned env (CI)"| REC([record it · pass])
+    B -->|"no · dev box"| SK([skip · not baselined higher than CI])
     B -->|yes| CMP{compared to<br/>baseline?}
     CMP -->|better / same| PASS([pass])
     CMP -->|regressed| RED([red])
     CMP -->|"lower requested"| U{--update-baselines<br/>+ --reason, in CI?}
-    U -->|yes| REC
-    U -->|no| RED
+    U -->|yes| REC2([re-baseline · pass])
+    U -->|no| RED2([red])
 ```
 
 ## Coverage
@@ -86,21 +86,17 @@ somewhere, so `--update-baselines` requires a reason. Dropping resolved survivor
 is always free. The mutation runner itself is configurable (`mutation_tool`,
 default `mutmut`).
 
-Why identity beats count, in one picture — same size, different members:
+Why identity beats count — same size, different members, and only the second run
+is a regression:
 
-```mermaid
-flowchart LR
-    subgraph last["baseline — 2 survivors"]
-        L1["parse.py:42 and→or"]
-        L2["parse.py:88 +→-"]
-    end
-    subgraph now["this run — 2 survivors"]
-        N1["parse.py:42 and→or"]
-        N2["store.py:15 <→<="]
-    end
-    L2 -. "killed — progress" .-> now
-    N2 -. "NEW — a hole opened" .-> RED([red])
-```
+| Survivor | Baseline (2) | This run (2) | |
+|---|:--:|:--:|---|
+| `parse.py:42 and→or` | ✓ | ✓ | unchanged |
+| `parse.py:88 +→-` | ✓ | — | killed — progress |
+| `store.py:15 <→<=` | — | ✓ | **NEW — a hole opened, red** |
+
+The count is 2 both weeks; the *identity* check is what catches the new survivor
+the count hides.
 
 ## Structure — grandfather the debt, hold the line
 

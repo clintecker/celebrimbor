@@ -45,7 +45,7 @@ pinned to an all-digit hash, and the whole obligation engine went dark with a
 fail-closed refusal.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["pin = all-digit<br/>blake2s hex<br/>e.g. 775376418253"] --> B["written to YAML<br/><em>unquoted</em>"]
     B --> C["read back<br/>as an <b>int</b>"]
     C --> D["loader demands<br/>a string"]

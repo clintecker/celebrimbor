@@ -5,7 +5,7 @@ green in minutes; the obligation engine you grow into. Nothing forces a big-bang
 migration.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["day 1<br/>commodity green<br/>+ pre-commit hook"] --> B["week 1<br/>infer + ratify<br/>the surface map"]
     B --> C["obligation gates<br/>go live in CI"]
     C --> D["PR stage<br/>producer + invariant<br/>ledgers"]

@@ -24,7 +24,7 @@ reddens on drift in either direction:
 - an exemption past its review date.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A["AST inventory<br/>every public callable<br/><em>(ground truth)</em>"] --> C{compare}
     M["surface map<br/>your ratified claims"] --> C
     C -->|"in code, no row"| H([hole · red])

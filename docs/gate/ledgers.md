@@ -90,13 +90,13 @@ attests something — a verifier, producer, parser, normalizer, or adapter — i
 there a recorded promise governing it?
 
 ```mermaid
-flowchart LR
-    D["git diff<br/>vs the base"] --> M{"each changed<br/>module's role"}
+flowchart TD
+    D{"can the diff<br/>be computed?"} -->|"no"| REF([refused — red])
+    D -->|yes| M{"each changed<br/>module's role"}
     M -->|"pure / presenter"| OK([no obligation])
     M -->|"policy-bearing"| I{"named by an<br/>invariant?"}
     I -->|yes| OK
     I -->|no| RED(["red — a guarantee<br/>changed unwatched"])
-    D -.->|"diff unknowable"| REF([refused — red])
 ```
 
 A changed [policy-role](../concepts/roles.md#policy-roles-and-the-impact-gate)
