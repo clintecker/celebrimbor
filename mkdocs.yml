@@ -49,7 +49,10 @@ markdown_extensions:
       anchor_linenums: true
   - pymdownx.superfences
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      # resolve `--8<--` includes from the repo root, so docs/changelog.md can
+      # embed the single-source-of-truth CHANGELOG.md without a second copy.
+      base_path: ["."]
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.emoji:
@@ -78,6 +81,7 @@ nav:
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md
+  - Changelog: changelog.md
 
 extra:
   social:
