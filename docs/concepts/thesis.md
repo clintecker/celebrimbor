@@ -75,10 +75,6 @@ flowchart TD
     Q2 -->|yes| Q3{moves a check<br/>toward an invariant?}
     Q3 -->|no| REJ
     Q3 -->|yes| KEEP([keep])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class REJ red
-    class KEEP green
 ```
 
 If a proposed feature would let a unit assert something it cannot be forced to

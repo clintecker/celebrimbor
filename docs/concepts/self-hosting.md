@@ -12,7 +12,7 @@ same files any adopter writes, in the same places, checked by the same code.
 
 Run against celebrimbor's own `src/`:
 
-| | |
+| Measure | Count |
 |---|---|
 | Modules classified | 57 |
 | Public callables accounted for | 242 |
@@ -50,8 +50,6 @@ flowchart LR
     B --> C["read back<br/>as an <b>int</b>"]
     C --> D["loader demands<br/>a string"]
     D --> E(["whole map REFUSED<br/>— all of Tier 1 dark"])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    class E red
 ```
 
 That is the gate working — it refused rather than guessing — but it was still a

@@ -33,10 +33,6 @@ flowchart TD
     RC --> B{"the role's budget<br/>allows this capability?"}
     B -->|yes| OK(["allowed<br/>(e.g. an adapter)"])
     B -->|no| RED(["red — un-injected<br/>in a role that forbids it"])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class RED red
-    class INJ,OK green
 ```
 
 ## Budgeted by role

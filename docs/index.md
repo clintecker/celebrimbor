@@ -62,7 +62,7 @@ its own slice:
 
 ```mermaid
 flowchart TD
-    R["**role**<br/>(ratified &amp; pinned)"]
+    R["<b>role</b><br/>(ratified &amp; pinned)"]
     R --> P["proof it owes<br/>→ fixtures gate"]
     R --> C["capability budget<br/>→ capabilities gate"]
     R --> E["consistent with the code?<br/>→ evidence gate"]

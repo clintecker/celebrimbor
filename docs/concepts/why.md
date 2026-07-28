@@ -57,8 +57,6 @@ flowchart TD
     D["<b>celebrimbor — is it what it claims to be?</b>"]
     A --> B --> C --> D
     D -.->|"the gap every other layer leaves open"| X(["where plausible-but-wrong lives"])
-    classDef me fill:#4a235a,stroke:#7d3c98,color:#fff
-    class D me
 ```
 
 Each layer answers a real question; none of them answers the last one.

@@ -19,10 +19,6 @@ flowchart TD
     C -->|no| CONV([convention defaults])
     D -->|yes| USE
     D -->|no| REF
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class REF red
-    class USE,CONV green
 ```
 
 ## Layout

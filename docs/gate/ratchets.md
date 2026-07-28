@@ -29,10 +29,6 @@ flowchart TD
     CMP -->|"lower requested"| U{--update-baselines<br/>+ --reason, in CI?}
     U -->|yes| REC
     U -->|no| RED
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class RED red
-    class PASS,REC green
 ```
 
 ## Coverage
@@ -104,8 +100,6 @@ flowchart LR
     end
     L2 -. "killed — progress" .-> now
     N2 -. "NEW — a hole opened" .-> RED([red])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    class RED red
 ```
 
 ## Structure — grandfather the debt, hold the line

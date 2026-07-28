@@ -32,10 +32,6 @@ flowchart LR
     C -->|"row for gone module"| P([phantom · red])
     C -->|"exemption expired"| X([stale waiver · red])
     C -->|"match · ratified · live"| G([green])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class H,U,P,X red
-    class G green
 ```
 
 Completeness is set-equality between what the code *is* and what the map

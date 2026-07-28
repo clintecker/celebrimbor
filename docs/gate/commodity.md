@@ -26,10 +26,6 @@ flowchart LR
     P -->|clean| G([pass])
     P -->|"violations found"| F([fail — with findings])
     P -->|"can't read it"| R([refused — red])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class R,F red
-    class G green
 ```
 
 In a **trusted environment** (CI), a *missing* tool is itself a refusal — the

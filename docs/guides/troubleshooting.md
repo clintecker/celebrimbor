@@ -12,8 +12,6 @@ flowchart LR
     S["– skipped<br/>(with a reason)"]:::g
     F["✗ fail<br/>(with a finding)"]:::r
     R["⊘ refused<br/>(could not check)"]:::r
-    classDef r fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef g fill:#1e8449,stroke:#145a32,color:#fff
 ```
 
 The one people trip on: **`⊘ refused` is red.** "I could not check this" is not

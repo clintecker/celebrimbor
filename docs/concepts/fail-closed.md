@@ -68,10 +68,6 @@ flowchart TD
     FAIL --> RED([red])
     RV --> RED
     REF --> RED
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class RED,REF,FAIL,RV red
-    class G,PASS,SKIP green
 ```
 
 The diagram has one deliberate asymmetry: there are three ways to reach red and
@@ -96,10 +92,6 @@ flowchart TD
     T -->|yes| E{"trusted env?<br/>(CI · CELEBRIMBOR_TRUSTED=1)"}
     E -->|"yes — toolchain was promised"| R([refused — red])
     E -->|"no — a dev box"| S([skipped, with reason])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class R red
-    class S,RUN green
 ```
 
 The asymmetry is the point: the place where the answer matters — CI, where a

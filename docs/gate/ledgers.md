@@ -42,10 +42,6 @@ flowchart TD
     V -->|yes| F{negative fixture<br/>exists?}
     F -->|no| R3([red])
     F -->|yes| G([proved])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class R1,R2,R3 red
-    class G,OK1 green
 ```
 
 !!! note "Override granularity"
@@ -101,10 +97,6 @@ flowchart LR
     I -->|yes| OK
     I -->|no| RED(["red — a guarantee<br/>changed unwatched"])
     D -.->|"diff unknowable"| REF([refused — red])
-    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
-    classDef green fill:#1e8449,stroke:#145a32,color:#fff
-    class RED,REF red
-    class OK green
 ```
 
 A changed [policy-role](../concepts/roles.md#policy-roles-and-the-impact-gate)
