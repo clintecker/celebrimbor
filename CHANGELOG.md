@@ -4,6 +4,46 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-07-27
+
+celebrimbor now gates itself. The full Tier 1 obligation engine runs against
+celebrimbor's own source and ships green: 242 callables classified, ratified,
+and pinned; 14 producers proved through real verifiers; 8 critical invariants
+each with a negative proof; every module import-clean. See
+[celebrimbor on celebrimbor](https://clintecker.github.io/celebrimbor/concepts/self-hosting/).
+
+Turning it on found real defects in the tool, which are the fixes below.
+
+### Fixed
+
+- **All-digit shape pins no longer break the surface map.** A `blake2s` pin that
+  lands in the digits `0`–`9` only was written to YAML unquoted, read back as an
+  integer, and refused by the loader — taking the whole of Tier 1 down with a
+  fail-closed refusal. Pins are now quoted on write and the legacy unquoted form
+  is coerced on read. Ships with its own round-trip falsifier. Found by pointing
+  celebrimbor at itself.
+
+### Changed
+
+- **The runner injects its clock.** `run_spec`/`run` took the elapsed time from
+  the ambient `time.perf_counter`; they now accept a `clock` parameter defaulted
+  to the real clock, so the timing they record is a seam a test can pin. This is
+  celebrimbor's own capability gate applied to celebrimbor.
+- **`load_all` / `load_builtin_checks` return the module names they loaded.**
+  Registration-by-import had no observable result; the loaders now return the
+  tuple of names they ensured are imported, so the load can be inspected and
+  proved rather than trusted.
+
+### Added
+
+- celebrimbor ships its own `.celebrimbor/` ledgers as a worked, real-world
+  example: a 49-row ratified surface map, a 15-entry producer ledger (14 proved,
+  1 on a dated `pending` list), and an 8-invariant ledger. The import-health gate
+  is enabled on itself (`import_check = true`).
+- New documentation page, **celebrimbor on celebrimbor**, documenting the
+  self-hosting result honestly — including the one `pending` producer and the
+  CI-only ratchets.
+
 ## [0.3.1] — 2026-07-27
 
 Evidence-check accuracy — three blind spots that forced honest roles to be

@@ -38,16 +38,25 @@ CHECK_MODULES: tuple[str, ...] = (
 _loaded = False
 
 
-def load_all() -> None:
-    """Import every check module exactly once. Idempotent."""
+def load_all() -> tuple[str, ...]:
+    """Import every check module exactly once. Idempotent.
+
+    Returns the fully-qualified names it ensured are imported. That return value
+    is the point, not a courtesy: registration-by-import has no visible result
+    otherwise, and a loader whose effect cannot be observed cannot be proven to
+    have loaded anything. The returned tuple is the artifact the meta-test
+    inspects to confirm every registered check module was reached.
+    """
     global _loaded
+    names = tuple(f"{__name__}.{name}" for name in CHECK_MODULES)
     if _loaded:
-        return
+        return names
     import importlib
 
     for name in CHECK_MODULES:
         importlib.import_module(f"{__name__}.{name}")
     _loaded = True
+    return names
 
 
 def _reset_for_tests() -> None:

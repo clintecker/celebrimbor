@@ -1,0 +1,86 @@
+# celebrimbor's own producer ledger.
+#
+# Every callable the surface map classifies `producer` names, here, the verifier
+# that inspects its artifact and a negative fixture proving that verifier bites.
+# The verifier must resolve to a real callable the map classifies `verifier`;
+# the fixture must exist. This is the no-blind-verifier gate turned on itself —
+# a producer whose "proof" is a verifier that can never fail is exactly the
+# blind spot the gate refuses, so the tool has to survive its own rule.
+
+version: 1
+
+producers:
+  # Registration-by-import loaders: their artifact is a fully-populated registry,
+  # and the runner-completeness gate is what reddens if any check went unloaded.
+  "checks":
+    verifier: checks.terminal:check_runner_completeness
+    negative_fixture: tests/negative/test_runner_completeness.py::test_dropped_check_is_red
+  "runner:load_builtin_checks":
+    verifier: checks.terminal:check_runner_completeness
+    negative_fixture: tests/negative/test_runner_completeness.py::test_dropped_check_is_red
+
+  # The report text is inspected by the completeness gate, which reads the very
+  # report `render` produces and reddens on an empty or short one.
+  "reporting":
+    verifier: checks.terminal:check_runner_completeness
+    negative_fixture: tests/negative/test_runner_completeness.py::test_empty_report_is_red_not_green
+
+  # The differ writes and compares known-bad expected files; the known-bad gate
+  # reads them and reddens when the recorded diagnostic is not the one produced.
+  "differ:update":
+    verifier: checks.knownbad:check_known_bad
+    negative_fixture: tests/negative/test_known_bad_gate.py::test_wrong_diagnostic_is_red
+  "differ:self_proof":
+    verifier: checks.knownbad:check_known_bad
+    negative_fixture: tests/negative/test_known_bad_gate.py::test_known_bad_file_not_actually_rejected_is_red
+
+  # The invariant ledger's docs are rendered from the same data the gate checks;
+  # that gate has a fixture asserting exactly that, which doubles as this one.
+  "ledgers.invariants:render_docs":
+    verifier: checks.invariants:check_invariants
+    negative_fixture: tests/negative/test_invariant_gate.py::test_docs_render_from_the_same_data_the_gate_checks
+
+  # Baseline writers: each baseline is read back by its ratchet gate, which
+  # reddens on a regression the written baseline should have captured.
+  "ratchets.coverage:write_coverage_baseline":
+    verifier: checks.ratchets:check_coverage
+    negative_fixture: tests/negative/test_ratchet_gate.py::test_coverage_drop_is_red
+  "ratchets.mutation:write_mutation_baseline":
+    verifier: checks.ratchets:check_mutation
+    negative_fixture: tests/negative/test_ratchet_gate.py::test_new_survivor_with_same_count_is_red
+  "ratchets.structure:write_structure_baseline":
+    verifier: checks.structure:check_capabilities
+    negative_fixture: tests/negative/test_structure_ratchet.py::test_new_breach_fails_despite_baseline
+
+  # Surface-map writers and renderers: the completeness gate reads the map they
+  # produce and refuses (not "passes") when it cannot be parsed.
+  "surface.map:write_map":
+    verifier: checks.surface:check_surface_completeness
+    negative_fixture: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults
+  "surface.map:append_rows":
+    verifier: checks.surface:check_surface_completeness
+    negative_fixture: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults
+  "surface.map:render_map":
+    verifier: checks.surface:check_surface_completeness
+    negative_fixture: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults
+  "surface.map:render_row":
+    verifier: checks.surface:check_surface_completeness
+    negative_fixture: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults
+
+  # Ratification writes the pinned map; the pin gate reads it back and reddens
+  # when a pinned shape no longer matches the code it was ratified against.
+  "surface.ratify:apply":
+    verifier: checks.evidence:check_ratification_pin
+    negative_fixture: tests/negative/test_evidence_gate.py::test_shape_drift_unratifies_row
+
+pending:
+  # run_init scaffolds tool configs and the known-bad directory. It is exercised
+  # end-to-end by tests/acceptance/test_integration_pattern.py, but no
+  # role-classified verifier *gate* inspects a scaffold yet — so it is admitted
+  # on the record, with a date, rather than granted a verifier it does not have.
+  "scaffold:run_init":
+    reason: >-
+      Scaffolding output is covered end-to-end by the acceptance suite, but no
+      gate verifier inspects it directly; write one (a check that a scaffolded
+      project gates green) or re-justify before the review date.
+    review_by: 2026-10-27

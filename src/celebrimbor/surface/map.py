@@ -269,6 +269,14 @@ def _parse_row(path: Path, module: str, body: Any) -> SurfaceRow:
         overrides[str(name)] = _parse_override(path, module, str(name), ov)
 
     pin = mapping.get("pin")
+    # A pin is a hex digest, but an all-digit one reads back from unquoted YAML
+    # as an int (bool is an int subclass, hence the explicit reject). Coerce the
+    # scalar rather than refuse, so a map written before pins were quoted still
+    # loads; anything non-scalar is a genuine defect.
+    if isinstance(pin, bool):
+        raise SurfaceMapError(f"{path}: modules.{module}.pin must be a string, not a boolean")
+    if isinstance(pin, int):
+        pin = str(pin)
     if pin is not None and not isinstance(pin, str):
         raise SurfaceMapError(f"{path}: modules.{module}.pin must be a string")
 
@@ -345,7 +353,10 @@ def render_row(row: SurfaceRow) -> list[str]:
         f"    status: {row.status}{marker}",
     ]
     if row.pin:
-        lines.append(f"    pin: {row.pin}")
+        # Quoted so an all-digit digest (a hex pin that happens to land in
+        # 0-9 only) round-trips as a string. Unquoted, YAML reads it as an int
+        # and the loader refuses the whole map.
+        lines.append(f'    pin: "{row.pin}"')
     if row.overrides:
         lines.append("    overrides:")
         lines.extend(

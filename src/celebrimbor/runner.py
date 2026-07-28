@@ -23,14 +23,19 @@ from __future__ import annotations
 
 import time
 import traceback
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from .context import Context
 from .registry import CheckSpec, Registry, default_registry
 from .result import CheckResult, GateReport, Tier
 
+Clock = Callable[[], float]
+"""A monotonic seconds source. Injected so the timing the runner records is a
+dependency a test can pin, not a wall-clock reading it cannot. The default is
+the real clock; the point of the seam is that tests do not have to use it."""
 
-def run_spec(spec: CheckSpec, ctx: Context) -> CheckResult:
+
+def run_spec(spec: CheckSpec, ctx: Context, *, clock: Clock = time.perf_counter) -> CheckResult:
     """Execute one check, converting every failure mode into a verdict.
 
     This function never raises for a fault inside ``spec.fn``. It is the sole
@@ -41,13 +46,13 @@ def run_spec(spec: CheckSpec, ctx: Context) -> CheckResult:
             spec.id, "disabled in celebrimbor config (an exception, on the record)"
         )
 
-    started = time.perf_counter()
+    started = clock()
     try:
         # Typed as `object`, not CheckResult: app-authored checks are not
         # type-checked by us, so the guards below are genuinely reachable.
         result: object = spec.fn(ctx)
     except Exception:
-        elapsed = time.perf_counter() - started
+        elapsed = clock() - started
         return CheckResult.refused(
             spec.id,
             f"{spec.title} — the check itself raised",
@@ -58,7 +63,7 @@ def run_spec(spec: CheckSpec, ctx: Context) -> CheckResult:
             remedy="fix the check; a gate that cannot run proves nothing",
             duration_s=elapsed,
         )
-    elapsed = time.perf_counter() - started
+    elapsed = clock() - started
 
     if result is None:
         return CheckResult.refused(
@@ -104,6 +109,7 @@ def run(
     *,
     registry: Registry | None = None,
     tier: Tier | None = None,
+    clock: Clock = time.perf_counter,
 ) -> GateReport:
     """Run every check registered at or below ``tier``.
 
@@ -116,10 +122,10 @@ def run(
     report = GateReport(tier=resolved)
     ctx.partial = report
 
-    started = time.perf_counter()
+    started = clock()
     for spec in reg.for_tier(resolved):
-        report.add(run_spec(spec, ctx))
-    report.duration_s = time.perf_counter() - started
+        report.add(run_spec(spec, ctx, clock=clock))
+    report.duration_s = clock() - started
     return report
 
 
@@ -146,17 +152,20 @@ def strays(report: GateReport, registry: Registry) -> set[str]:
     return report.ids() - registry.ids()
 
 
-def load_builtin_checks() -> None:
+def load_builtin_checks() -> tuple[str, ...]:
     """Import the modules that register celebrimbor's own checks.
 
     Registration-by-import-side-effect is a real hazard — a check in a module
     nobody imports is a check that silently never runs — so the import list is
     explicit and centralized here rather than scattered, and the meta-test
     walks the package to prove nothing is missing from it.
+
+    Returns the module names it ensured are loaded, so the load has an
+    inspectable result rather than a bare side effect.
     """
     from . import checks
 
-    checks.load_all()
+    return checks.load_all()
 
 
 def iter_specs(tier: str | Tier = Tier.FULL) -> Iterable[CheckSpec]:

@@ -1,0 +1,286 @@
+# celebrimbor surface map
+#
+# Each module names the ROLE its callables play, which determines the kind of
+# proof they owe. Rows marked `status: inferred` were guessed from naming and
+# are RED until a human ratifies them.
+#
+# To ratify a row: check the role is right, then change `inferred` -> `ratified`.
+# That is the whole job.
+#
+# Modules missing from this file are RED, not absent. Inference never proposes
+# `pure` or `presenter` and abstains rather than guessing, so a module of
+# genuinely pure helpers gets no row here and the gate will name it. Add it by
+# hand with `status: ratified` — the gate tells you the exact line.
+#
+# A single callable that differs from its module goes under `overrides:` as one
+# line, e.g. `slugify: pure`. Overrides count as ratified: typing a specific
+# role for a specific callable IS the judgment call.
+#
+#   pure          a property or unit test over its contract
+#   parser        a unit test with malformed input that must be refused
+#   normalizer    a property test covering idempotence and folding
+#   verifier      a negative fixture that must turn it red
+#   producer      proof through the verifier that inspects its artifact
+#   orchestrator  an interaction test over its dependency edges
+#   adapter       a contract test against fake and real backends
+#   presenter     an integration or end-to-end run
+
+version: 1
+modules:
+  _import_probe:
+    role: adapter
+    status: ratified
+    pin: "07ef3a768c89"
+  celebrimbor:
+    role: orchestrator
+    status: ratified
+    pin: "f8c29b29ffc2"
+  checks:
+    role: producer
+    status: ratified
+    pin: "2f3c0954a659"
+  checks._shared:
+    role: parser
+    status: ratified
+    pin: "ba228293a2fd"
+    overrides:
+      LedgerState.present: pure
+      get_inventory: orchestrator
+      get_surface_map: orchestrator
+      iter_ratified: pure
+  checks.commodity:
+    role: verifier
+    status: ratified
+    pin: "04c12d30da43"
+  checks.evidence:
+    role: verifier
+    status: ratified
+    pin: "3fdbad5f4dc1"
+    overrides:
+      compute_pin: pure
+  checks.impact:
+    role: verifier
+    status: ratified
+    pin: "9a69c1d8a297"
+  checks.imports:
+    role: verifier
+    status: ratified
+    pin: "ea427f47c3a5"
+  checks.invariants:
+    role: verifier
+    status: ratified
+    pin: "824a9e47da76"
+  checks.knownbad:
+    role: verifier
+    status: ratified
+    pin: "8cc910036666"
+  checks.markers:
+    role: verifier
+    status: ratified
+    pin: "88fa3ca13471"
+  checks.meta:
+    role: verifier
+    status: ratified
+    pin: "d3565961372f"
+  checks.producers:
+    role: verifier
+    status: ratified
+    pin: "4f6777e3bcee"
+  checks.ratchets:
+    role: verifier
+    status: ratified
+    pin: "89e258861b97"
+  checks.structure:
+    role: verifier
+    status: ratified
+    pin: "22c8abe4b22d"
+  checks.surface:
+    role: verifier
+    status: ratified
+    pin: "22d0d49ba8d3"
+  checks.terminal:
+    role: verifier
+    status: ratified
+    pin: "8f56a7d26200"
+  cli:
+    role: adapter
+    status: ratified
+    pin: "9510d11b0988"
+    overrides:
+      explain: presenter
+      main: pure
+  commodity.ladder:
+    role: parser
+    status: ratified
+    pin: "38120136f401"
+    overrides:
+      mypy: pure
+      ruff_check: pure
+      ruff_format: pure
+  commodity.tools:
+    role: adapter
+    status: ratified
+    pin: "3f1d8c5eb1a9"
+    overrides:
+      ToolResult.combined: pure
+      ToolResult.command: pure
+      ToolResult.ok: pure
+      available: pure
+  config:
+    role: parser
+    status: ratified
+    pin: "0b54abb39e28"
+  context:
+    role: pure
+    status: ratified
+    pin: "631431c9aef9"
+    overrides:
+      Context.changed_files: adapter
+      Context.for_root: adapter
+      Context.is_git_repo: adapter
+      Context.memo: adapter
+  differ:
+    role: pure
+    status: ratified
+    pin: "e00a6be41532"
+    overrides:
+      self_proof: producer
+      update: producer
+  docs:
+    role: pure
+    status: ratified
+    pin: "c679b528937a"
+  ledgers.invariants:
+    role: parser
+    status: ratified
+    pin: "f0101d4849c2"
+    overrides:
+      render_docs: producer
+  ledgers.producers:
+    role: parser
+    status: ratified
+    pin: "81d25d89857e"
+  ratchets.baseline:
+    role: parser
+    status: ratified
+    pin: "775376418253"
+  ratchets.coverage:
+    role: parser
+    status: ratified
+    pin: "8f08d25da963"
+    overrides:
+      write_coverage_baseline: producer
+  ratchets.mutation:
+    role: parser
+    status: ratified
+    pin: "3f7bf96ee024"
+    overrides:
+      write_mutation_baseline: producer
+  ratchets.structure:
+    role: parser
+    status: ratified
+    pin: "bab1c11bef3d"
+    overrides:
+      write_structure_baseline: producer
+  registry:
+    role: pure
+    status: ratified
+    pin: "8e1c04a063d1"
+    overrides:
+      Registry.clear: adapter
+      Registry.register: adapter
+  reporting:
+    role: producer
+    status: ratified
+    pin: "76dbf417c4b1"
+  result:
+    role: pure
+    status: ratified
+    pin: "2d268a1135a1"
+    overrides:
+      GateReport.add: adapter
+  roles:
+    role: pure
+    status: ratified
+    pin: "1725ed168a39"
+  runner:
+    role: orchestrator
+    status: ratified
+    pin: "a3d70e93d8f7"
+    overrides:
+      escaped: pure
+      expected_ids: pure
+      iter_specs: pure
+      load_builtin_checks: producer
+      strays: pure
+  scaffold:
+    role: pure
+    status: ratified
+    pin: "3e5d5ddf6a23"
+    overrides:
+      run_init: producer
+  scenarios:
+    role: pure
+    status: ratified
+    pin: "22385ffee882"
+  structure.capabilities:
+    role: pure
+    status: ratified
+    pin: "23b5159343ff"
+  structure.cohesion:
+    role: pure
+    status: ratified
+    pin: "c9598d54076e"
+  structure.complexity:
+    role: pure
+    status: ratified
+    pin: "e1745959b3d0"
+  structure.evidence:
+    role: pure
+    status: ratified
+    pin: "ce2f2ea79a1a"
+  surface.audit:
+    role: pure
+    status: ratified
+    pin: "3d1769444bb3"
+  surface.inference:
+    role: pure
+    status: ratified
+    pin: "c348acfc1b87"
+  surface.inventory:
+    role: pure
+    status: ratified
+    pin: "75ab75a1fac9"
+    overrides:
+      inventory: parser
+  surface.map:
+    role: parser
+    status: ratified
+    pin: "f5fd1b3d39bd"
+    overrides:
+      append_rows: producer
+      render_map: producer
+      render_row: producer
+      write_map: producer
+  surface.naming:
+    role: pure
+    status: ratified
+    pin: "0744c778629a"
+  surface.ratify:
+    role: pure
+    status: ratified
+    pin: "9d03ff575717"
+    overrides:
+      apply: producer
+  waiver:
+    role: parser
+    status: ratified
+    pin: "4b9c2f8ddcf9"
+    overrides:
+      DatedWaiver.days_remaining: adapter
+      DatedWaiver.expired: adapter
+      DatedWaiver.to_dict: pure
+  yamlio:
+    role: parser
+    status: ratified
+    pin: "2680bb1227a0"

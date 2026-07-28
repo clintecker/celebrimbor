@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "celebrimbor"
-version = "0.3.1"
+version = "0.4.0"
 description = "Invariant-driven design as a framework: an omakase quality harness that makes every unit carry its own falsifier."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -114,3 +114,7 @@ exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedE
 [tool.celebrimbor]
 source = "src/celebrimbor"
 tests = "tests"
+# celebrimbor holds itself to its own strictest tier: the import-health gate is
+# opt-in because it imports your code, and celebrimbor's modules are import-safe
+# by design, so it turns the gate on for itself.
+import_check = true

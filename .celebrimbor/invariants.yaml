@@ -1,0 +1,86 @@
+# celebrimbor's own invariant ledger — the promises the tool makes about itself.
+#
+# Each promise names the callable that enforces it and, because every one of
+# these is load-corrupting or trust-destroying if it fails, the negative proof
+# that the enforcer actually bites. The gate checks every line of this against
+# the code: rename an enforcer and the promise it keeps goes red, because a
+# promise whose enforcer is gone is a promise nobody is keeping.
+#
+# These are not aspirations. They are the theses in the README turned into
+# claims a machine re-checks on every run — including against this very file.
+
+version: 1
+
+invariants:
+  no-check-without-a-falsifier:
+    statement: >-
+      No check can be registered without naming the test that would prove it
+      wrong. A gate you cannot falsify is decoration, so the decorator refuses
+      one that tries.
+    enforced_by: registry:check
+    critical: true
+    negative_proof: tests/negative/test_falsifier_gate.py::test_check_without_falsifier_cannot_be_written
+
+  a-check-never-passes-by-accident:
+    statement: >-
+      A check that raises, returns None, or returns the wrong type becomes
+      REFUSED, never PASS. The single runner converts every misbehaviour into a
+      non-green verdict, so a broken check cannot read as a passing one.
+    enforced_by: runner:run_spec
+    critical: true
+    negative_proof: tests/negative/test_runner_completeness.py::test_raising_check_refuses_rather_than_crashing
+
+  an-empty-gate-is-red:
+    statement: >-
+      A gate that ran nothing is red, not green. "I proved nothing" and "I
+      proved everything is fine" are opposite verdicts, and the empty report
+      takes the first.
+    enforced_by: checks.terminal:check_runner_completeness
+    critical: true
+    negative_proof: tests/negative/test_runner_completeness.py::test_empty_report_is_red_not_green
+
+  every-public-callable-is-accounted-for:
+    statement: >-
+      Every public callable in the source is named in the surface map. A
+      callable the map does not mention is a hole in the completeness guarantee,
+      so it reddens the gate rather than passing unseen.
+    enforced_by: checks.surface:check_surface_completeness
+    critical: true
+    negative_proof: tests/negative/test_surface_gate.py::test_uncovered_callable_is_red
+
+  a-role-the-code-contradicts-is-refused:
+    statement: >-
+      A declared role is a claim the code must be consistent with, not a trusted
+      label. A verifier whose every path returns truthy — one that can never
+      turn red — is refused as a blind verifier.
+    enforced_by: checks.evidence:check_role_evidence
+    critical: true
+    negative_proof: tests/negative/test_evidence_gate.py::test_verifier_that_cannot_fail_is_red
+
+  ratification-is-pinned-to-the-code:
+    statement: >-
+      A ratified role is pinned to the shape of the code it was ratified
+      against. When that shape drifts, the row reverts to un-ratified and goes
+      red — so nobody edits a parser into a socket-opener under a stale sign-off.
+    enforced_by: checks.evidence:check_ratification_pin
+    critical: true
+    negative_proof: tests/negative/test_evidence_gate.py::test_shape_drift_unratifies_row
+
+  every-producer-is-proved-through-a-verifier:
+    statement: >-
+      Every producer names a real verifier that inspects its artifact and a
+      negative fixture proving that verifier bites. You cannot inherit a
+      verifier that inspects nothing.
+    enforced_by: checks.producers:check_producers
+    critical: true
+    negative_proof: tests/negative/test_producer_gate.py::test_producer_without_ledger_entry_is_red
+
+  malformed-input-is-refused-not-defaulted:
+    statement: >-
+      A parser handed malformed input refuses; it never silently reads it as
+      empty or clean. "I could not read this" is not "there was nothing to
+      read", and conflating them is the estimating behaviour the harness exists
+      to prevent.
+    enforced_by: checks.surface:check_surface_completeness
+    critical: true
+    negative_proof: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults

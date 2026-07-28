@@ -103,6 +103,22 @@ including its own.
 
 ---
 
+## Proof it's real: celebrimbor gates itself
+
+celebrimbor runs its full Tier 1 against its own source and ships green — 242
+callables classified and pinned, 14 producers proved through real verifiers, 8
+critical invariants each with a negative proof, every module import-clean.
+Turning it on found a bug in the tool, forced a dependency-injection fix on its
+own runner, and left exactly one debt on a dated `pending` list rather than
+papering over it.
+
+A quality tool that cannot pass its own gate is asking you to do something it
+will not.
+
+[celebrimbor on celebrimbor →](concepts/self-hosting.md)
+
+---
+
 ## Built for the AI era
 
 The gate is an adversary a model cannot talk its way past:

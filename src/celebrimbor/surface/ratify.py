@@ -114,13 +114,16 @@ def _rewrite(lines: list[str], pin: str | None) -> tuple[list[str], _BlockState]
             out.append(f"    status: {RATIFIED}")
         elif key == "pin":
             had_pin = True
-            pin_matched = pin is not None and value == pin
-            out.append(f"    pin: {pin}" if pin else line)
+            # Compare against the unquoted digest: an existing pin is written
+            # quoted (so an all-digit hash survives YAML), so strip the quotes
+            # before matching, or a re-ratify would always look like a re-pin.
+            pin_matched = pin is not None and value.strip('"') == pin
+            out.append(f'    pin: "{pin}"' if pin else line)
         else:
             out.append(line)
 
     if pin and not had_pin and status_index is not None:
-        out.insert(status_index + 1, f"    pin: {pin}")
+        out.insert(status_index + 1, f'    pin: "{pin}"')
 
     return out, _BlockState(was_ratified, had_pin, pin_matched)
 
