@@ -130,7 +130,11 @@ def test_empty_report_is_red_not_green(project: Project) -> None:
 def test_tier_filtering_is_the_only_definition_of_a_complete_run() -> None:
     """`expected_ids` is the single source of truth the meta-check compares to."""
     registry = Registry()
-    for check_id, stage in (("a.fast", Stage.FAST), ("a.def", Stage.DEFAULT), ("a.full", Stage.FULL)):
+    for check_id, stage in (
+        ("a.fast", Stage.FAST),
+        ("a.def", Stage.DEFAULT),
+        ("a.full", Stage.FULL),
+    ):
         check(
             id=check_id,
             title=check_id,

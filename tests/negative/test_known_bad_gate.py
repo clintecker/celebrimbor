@@ -130,3 +130,75 @@ def test_malformed_expected_refuses(project: Project) -> None:
     )
     result = project.run(_ID)
     assert result.verdict is Verdict.REFUSED
+
+
+# --- app-declared checkers (issue #9) -------------------------------------
+
+_CHECKER = (
+    'import sys\nif "badword" in open(sys.argv[1]).read():\n    print(f"BADWORD {sys.argv[1]}")\n'
+)
+_PYPROJECT = """
+    [project]
+    name = "fixture"
+    version = "0.0.0"
+
+    [tool.celebrimbor]
+    source = "src"
+
+    [tool.celebrimbor.known_bad_checkers.style_audit]
+    command = "python checker.py {file}"
+    pattern = "^([A-Z]+)"
+    """
+
+
+def test_custom_checker_that_fires_passes(project: Project) -> None:
+    """A domain linter (not ruff/mypy) can prove its own known-bad fixture."""
+    project.pyproject(_PYPROJECT)
+    project.write("checker.py", _CHECKER)
+    project.write("tests/known-bad/has_badword.txt", "this has a badword in it\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        has_badword.txt:
+          checker: style_audit
+          diagnostic: BADWORD
+          why: proves the badword rule still fires
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.PASS
+
+
+def test_custom_checker_that_does_not_fire_is_red(project: Project) -> None:
+    """A file the declared checker does not actually reject is a red — the whole
+    point survives for app checkers, not only for ruff/mypy."""
+    project.pyproject(_PYPROJECT)
+    project.write("checker.py", _CHECKER)
+    project.write("tests/known-bad/clean.txt", "nothing wrong here\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        clean.txt:
+          checker: style_audit
+          diagnostic: BADWORD
+          why: claims to trip the rule, but does not
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-not-rejected" in codes(result)
+
+
+def test_undeclared_checker_is_unverifiable(project: Project) -> None:
+    """A checker that is neither built-in nor declared cannot be run — fail closed."""
+    project.write("tests/known-bad/thing.txt", "x\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        thing.txt:
+          checker: mystery_linter
+          diagnostic: WHATEVER
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-unverifiable" in codes(result)

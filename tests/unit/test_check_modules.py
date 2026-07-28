@@ -51,13 +51,18 @@ def test_terminal_check_sorts_last_even_when_registered_first() -> None:
     """
     reg = Registry()
 
-    @check(id="app.terminal", title="terminal", terminal=True,
-           falsified_by="tests/x.py", registry=reg)
+    @check(
+        id="app.terminal", title="terminal", terminal=True, falsified_by="tests/x.py", registry=reg
+    )
     def _terminal(ctx: object) -> CheckResult:
         return CheckResult.passed("app.terminal", "ok")
 
-    @check(id="app.late", title="registered after the terminal one",
-           falsified_by="tests/x.py", registry=reg)
+    @check(
+        id="app.late",
+        title="registered after the terminal one",
+        falsified_by="tests/x.py",
+        registry=reg,
+    )
     def _late(ctx: object) -> CheckResult:
         return CheckResult.passed("app.late", "ok")
 

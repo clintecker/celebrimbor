@@ -27,6 +27,7 @@ from pathlib import Path
 
 from ..commodity.tools import ToolMissingError
 from ..commodity.tools import run as run_tool
+from ..config import CheckerCommand
 from ..context import Context
 from ..registry import check
 from ..result import CheckResult, Finding, Stage
@@ -75,20 +76,31 @@ def _fixture_files(known_bad_dir: Path) -> set[str]:
     }
 
 
-def _diagnostics_from(checker: str, file: Path, root: Path) -> set[str] | str:
+def _diagnostics_from(
+    checker: str, file: Path, root: Path, checkers: dict[str, CheckerCommand]
+) -> set[str] | str:
     """The diagnostic codes ``checker`` produces on ``file``.
 
-    Returns a string starting ``missing:`` when the checker is absent, so the
-    caller can apply the no-silent-skip policy. Runs the checker *isolated* from
-    project config: a known-bad file lives under a per-file-ignore, and the
-    whole point is to see the rule fire regardless.
+    ``ruff`` and ``mypy`` are built-in shorthands; any other name is resolved
+    from an app's ``[tool.celebrimbor.known_bad_checkers]`` so a domain linter can
+    stand where they do (issue #9). Returns a string starting ``missing:`` when
+    the checker is absent, so the caller can apply the no-silent-skip policy.
+    Runs the checker *isolated* from project config where it can: a known-bad file
+    lives under a per-file-ignore, and the whole point is to see the rule fire
+    regardless.
     """
     if checker == "ruff":
         args = ["check", "--isolated", "--select", "ALL", "--output-format", "json", str(file)]
     elif checker == "mypy":
         args = ["--no-error-summary", "--show-error-codes", "--no-color-output", str(file)]
+    elif checker in checkers:
+        return _custom_diagnostics(checkers[checker], file, root)
     else:
-        return f"unknown checker {checker!r}; known-bad supports ruff and mypy"
+        known = ", ".join(sorted({"ruff", "mypy", *checkers}))
+        return (
+            f"unknown checker {checker!r}; known-bad runs ruff, mypy, and checkers you declare "
+            f"in [tool.celebrimbor.known_bad_checkers] (available: {known})"
+        )
 
     try:
         result = run_tool(checker, args, cwd=root, timeout_s=_TIMEOUT_S)
@@ -98,6 +110,36 @@ def _diagnostics_from(checker: str, file: Path, root: Path) -> set[str] | str:
     if checker == "ruff":
         return _ruff_codes(result.stdout)
     return _mypy_codes(result.combined)
+
+
+def _custom_diagnostics(spec: CheckerCommand, file: Path, root: Path) -> set[str] | str:
+    """Run an app-declared checker command and extract its diagnostic codes."""
+    import shlex
+
+    argv = shlex.split(spec.command.replace("{file}", str(file)))
+    if not argv:
+        return "missing:empty command"
+    tool, args = argv[0], argv[1:]
+    try:
+        result = run_tool(tool, args, cwd=root, timeout_s=_TIMEOUT_S)
+    except ToolMissingError:
+        return f"missing:{tool}"
+    return _custom_codes(result.combined, spec.code_pattern)
+
+
+def _custom_codes(output: str, pattern: str | None) -> set[str]:
+    """Diagnostic codes from a custom checker's output.
+
+    With no pattern, each non-empty line is a code. With one, its first group
+    (or the whole match) is the code, taken per match across the output — so a
+    line like ``EM-DASH path:12`` yields ``EM-DASH`` for ``pattern = '^(\\S+)'``.
+    """
+    if not pattern:
+        return {line.strip() for line in output.splitlines() if line.strip()}
+    import re
+
+    rx = re.compile(pattern, re.MULTILINE)
+    return {(m.group(1) if m.groups() else m.group(0)) for m in rx.finditer(output)}
 
 
 def _ruff_codes(stdout: str) -> set[str]:
@@ -144,7 +186,11 @@ def check_known_bad(ctx: Context) -> CheckResult:
 
     files = _fixture_files(directory)
     findings = _orphan_findings(files, expectations)
-    findings.extend(_provenance_findings(files, expectations, directory, ctx.root))
+    findings.extend(
+        _provenance_findings(
+            files, expectations, directory, ctx.root, ctx.config.known_bad_checkers
+        )
+    )
 
     checked = len(files & set(expectations))
     if findings:
@@ -176,18 +222,25 @@ def _orphan_findings(files: set[str], expectations: dict[str, Expectation]) -> l
 
 
 def _provenance_findings(
-    files: set[str], expectations: dict[str, Expectation], directory: Path, root: Path
+    files: set[str],
+    expectations: dict[str, Expectation],
+    directory: Path,
+    root: Path,
+    checkers: dict[str, CheckerCommand],
 ) -> list[Finding]:
     findings: list[Finding] = []
     for filename in sorted(files & set(expectations)):
         exp = expectations[filename]
-        diagnostics = _diagnostics_from(exp.checker, directory / filename, root)
+        diagnostics = _diagnostics_from(exp.checker, directory / filename, root, checkers)
         if isinstance(diagnostics, str):
             findings.append(
                 Finding(
                     message=f"cannot verify {filename!r}: {diagnostics.removeprefix('missing:')}",
                     code="known-bad-unverifiable",
-                    hint=f"install {exp.checker}, or correct the checker name in expected.yaml",
+                    hint=(
+                        f"install {exp.checker}, correct the checker name, or declare it under "
+                        "[tool.celebrimbor.known_bad_checkers]"
+                    ),
                 )
             )
         elif exp.diagnostic not in diagnostics:

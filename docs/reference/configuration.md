@@ -42,6 +42,24 @@ pinned_environment = true      # ratchets may baseline here
 Both default to a CI signal (`CI=1`, or the usual CI env vars, or
 `CELEBRIMBOR_TRUSTED=1`). You rarely set these by hand — CI sets them for you.
 
+## Your own checks and checkers
+
+```toml
+[tool.celebrimbor]
+# App @check modules the CLI imports so `celebrimbor gate` runs your gates too.
+check_modules = ["myapp.quality_checks"]
+
+# A domain linter that proves its own tests/known-bad/ fixtures (beyond ruff/mypy).
+[tool.celebrimbor.known_bad_checkers.style_audit]
+command = "python -m myapp.style_audit {file}"   # {file} = the fixture path
+pattern = "^([A-Z-]+)"                            # optional: first group = the code
+```
+
+`check_modules` is [Writing custom checks](../guides/custom-checks.md);
+`known_bad_checkers` is [Fixtures & markers](../gate/fixtures.md). A named module
+that will not import, or a checker command that will not run, is a hard
+fail-closed error — never a silently smaller gate.
+
 ## Ledger paths
 
 Point celebrimbor at existing ledgers instead of moving them under

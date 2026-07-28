@@ -38,7 +38,9 @@ def _project(project: Project, *, opt_in: bool = True) -> Project:
 
 
 def _run(project: Project) -> object:
-    return run_spec(project.spec(_ID), Context(config=Config.load(project.root), stage=Stage.DEFAULT))
+    return run_spec(
+        project.spec(_ID), Context(config=Config.load(project.root), stage=Stage.DEFAULT)
+    )
 
 
 def test_module_that_raises_on_import_is_red(project: Project) -> None:

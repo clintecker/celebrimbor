@@ -24,9 +24,7 @@ def _roundtrip(row: SurfaceRow, tmp_path: Path) -> SurfaceRow:
 
 def test_all_digit_pin_survives_the_round_trip(tmp_path: Path) -> None:
     """The bug: an all-numeric pin must come back a string, not an int."""
-    row = SurfaceRow(
-        module="widgets", role=Role.PARSER, status="ratified", pin="775376418253"
-    )
+    row = SurfaceRow(module="widgets", role=Role.PARSER, status="ratified", pin="775376418253")
     back = _roundtrip(row, tmp_path)
     assert back.pin == "775376418253"
     assert isinstance(back.pin, str)

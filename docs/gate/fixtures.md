@@ -32,6 +32,22 @@ unused_import.py:
 The gate runs the named checker (isolated from project config, so a per-file
 ignore does not hide the rule) and confirms the diagnostic fires.
 
+`ruff` and `mypy` are built-in shorthands, but the gate is not limited to them.
+An app with its own domain linter declares how to run it, and its known-bad
+fixtures get the same three guarantees:
+
+```toml
+[tool.celebrimbor.known_bad_checkers.style_audit]
+command = "python -m myapp.style_audit {file}"   # {file} = the fixture path
+pattern = "^([A-Z-]+)"                            # first group = the diagnostic code
+```
+
+The gate runs the command on each fixture that names `style_audit`, extracts the
+codes (with `pattern`, or one per line if omitted), and confirms the expected
+diagnostic is among them. A checker that will not run is *unverifiable* — red,
+not a quiet pass. This is what lets an app retire its own hand-rolled
+fixture-provenance auditor and lean on celebrimbor instead.
+
 ## Marker grammar
 
 `celebrimbor.markers` enforces that a test's markers mean something checkable —

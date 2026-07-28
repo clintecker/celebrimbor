@@ -57,6 +57,22 @@ def _detect_ci() -> bool:
 
 
 @dataclass(frozen=True, slots=True)
+class CheckerCommand:
+    """How to run an app's own known-bad checker (issue #9).
+
+    ``command`` is a shell-style template with a ``{file}`` placeholder; the
+    known-bad gate runs it on each fixture that names this checker and extracts
+    the diagnostic codes from its output. ``code_pattern`` is an optional regex
+    whose first group is the code (default: each non-empty output line is a
+    code). Lets an adopter's domain linter stand where only ``ruff``/``mypy``
+    used to, without weakening any of the three provenance guarantees.
+    """
+
+    command: str
+    code_pattern: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class Config:
     """Resolved configuration for one project root."""
 
@@ -110,6 +126,11 @@ class Config:
     hand-rolled programmatic entry point. A module that cannot be imported is a
     hard, fail-closed error — a declared check that silently never runs is the
     exact failure mode this harness exists to prevent."""
+
+    known_bad_checkers: dict[str, CheckerCommand] = field(default_factory=dict)
+    """App-declared known-bad checkers, keyed by the name used in
+    ``expected.yaml``. Lets a domain linter (not just ``ruff``/``mypy``) prove it
+    still rejects its known-bad fixtures. See :class:`CheckerCommand`."""
 
     disabled_checks: frozenset[str] = frozenset()
     """Exceptions, on the record. Disabling a check is visible in every run."""
@@ -285,6 +306,7 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "min_coverage_floor": _as_floor,
     "exclude": _as_str_tuple,
     "check_modules": _as_str_tuple,
+    "known_bad_checkers": lambda value, _key: _parse_known_bad_checkers(value),
     "disabled_checks": _as_str_set,
     "policy_roles": lambda value, key: _parse_policy_roles(value, key),
     "limits": lambda value, _key: _parse_limits(value),
@@ -341,6 +363,42 @@ def _parse_paths(raw: Any) -> dict[str, str]:
             f"Known: {', '.join(sorted(_KNOWN_PATHS))}"
         )
     return {key: _as_str(value, f"paths.{key}") for key, value in raw.items()}
+
+
+def _parse_known_bad_checkers(raw: Any) -> dict[str, CheckerCommand]:
+    """Read ``[tool.celebrimbor.known_bad_checkers.<name>]`` (issue #9).
+
+    Each entry needs a ``command`` (with a ``{file}`` placeholder) and may set a
+    ``pattern`` (regex, first group = the diagnostic code). A missing command is
+    an error rather than a silently-inert checker — the whole point is a checker
+    that actually runs.
+    """
+    if not isinstance(raw, dict):
+        raise ConfigError(f"known_bad_checkers must be a table, got {type(raw).__name__}")
+    out: dict[str, CheckerCommand] = {}
+    for name, body in raw.items():
+        if not isinstance(body, dict):
+            raise ConfigError(
+                f"known_bad_checkers.{name} must be a table, got {type(body).__name__}"
+            )
+        if "command" not in body:
+            raise ConfigError(
+                f"known_bad_checkers.{name} needs a `command` (with a {{file}} placeholder) — "
+                "a checker with no command cannot run"
+            )
+        if "{file}" not in str(body["command"]):
+            raise ConfigError(
+                f"known_bad_checkers.{name}.command must contain the {{file}} placeholder, so "
+                "the gate knows where to pass the fixture path"
+            )
+        pattern = body.get("pattern")
+        out[str(name)] = CheckerCommand(
+            command=_as_str(body["command"], f"known_bad_checkers.{name}.command"),
+            code_pattern=_as_str(pattern, f"known_bad_checkers.{name}.pattern")
+            if pattern
+            else None,
+        )
+    return out
 
 
 def _apply(cfg: Config, data: dict[str, Any], root: Path) -> Config:

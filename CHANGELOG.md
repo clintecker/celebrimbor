@@ -4,6 +4,26 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.0 — 2026-07-28
+
+### Added
+
+- **App-declared known-bad checkers (issue #9).** The known-bad provenance gate
+  only knew `ruff` and `mypy`, so an app whose fixtures are rejected by its own
+  domain linter couldn't use it and had to keep a parallel auditor. Now a
+  checker can be declared in config, and its fixtures get the same three
+  guarantees (orphans both directions, the *right* checker fires, the *expected*
+  diagnostic appears):
+
+  ```toml
+  [tool.celebrimbor.known_bad_checkers.style_audit]
+  command = "python -m myapp.style_audit {file}"   # {file} = the fixture path
+  pattern = "^([A-Z-]+)"                            # optional: first group = the code
+  ```
+
+  `ruff`/`mypy` remain built-in shorthands. A checker that will not run is
+  *unverifiable* — red, never a quiet pass. New `config.CheckerCommand`.
+
 ## 0.7.1 — 2026-07-28
 
 ### Fixed
