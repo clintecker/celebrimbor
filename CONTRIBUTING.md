@@ -58,6 +58,30 @@ Use the issue templates. For a bug, the most useful thing you can give us is the
 smallest input that reproduces it — ideally one that could become a negative
 fixture.
 
+## Releasing
+
+Releases go through `scripts/release.sh`, which exists for one reason:
+`gh release create <new-tag>` creates the tag and then *checks it out*,
+detaching HEAD from `main` — after which the next commit lands off-branch and
+`git push origin main` silently does nothing. The script sidesteps that by
+creating and pushing the tag itself, then calling gh with `--verify-tag` (so gh
+finds the tag already there and never touches your working copy).
+
+Do the creative parts by hand, then run the script:
+
+```bash
+# 1. bump the version in pyproject.toml and src/celebrimbor/__init__.py
+# 2. add the CHANGELOG.md entry — its body becomes the release notes
+# 3. commit and push
+git commit -am "release 0.11.0: <summary>"
+git push origin main
+# 4. cut it (guards: on main, clean, pushed, version matches, tag is new)
+scripts/release.sh v0.11.0
+```
+
+The script builds the wheel/sdist, tags, pushes the tag, creates the GitHub
+release from the changelog entry, and prints proof that HEAD is still on `main`.
+
 ## License
 
 By contributing, you agree that your contributions are licensed under the
