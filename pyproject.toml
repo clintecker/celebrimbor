@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "celebrimbor"
-version = "0.10.0"
+version = "0.10.1"
 description = "Invariant-driven design as a framework: an omakase quality harness that makes every unit carry its own falsifier."
 readme = "README.md"
 requires-python = ">=3.11"

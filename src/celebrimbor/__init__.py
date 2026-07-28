@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from .context import Context
 
-__version__ = "0.10.0"
+__version__ = "0.10.1"
 
 __all__ = [
     "CheckResult",
