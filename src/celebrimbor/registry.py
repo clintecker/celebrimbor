@@ -32,7 +32,7 @@ from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol
 
-from .result import CheckResult, Tier
+from .result import CheckResult, Stage
 from .waiver import DatedWaiver, parse_review_date
 
 if TYPE_CHECKING:
@@ -85,7 +85,7 @@ class CheckSpec:
     id: str
     title: str
     fn: CheckFn
-    tier: Tier
+    stage: Stage
     falsified_by: Falsifier
     order: int
     tags: frozenset[str] = field(default_factory=frozenset)
@@ -114,7 +114,7 @@ class Registry:
     """An insertion-ordered, id-unique collection of checks.
 
     Order matters and is preserved: cheap checks registered first surface their
-    failures first, which is most of what makes a ~10s tier feel fast.
+    failures first, which is most of what makes a ~10s stage feel fast.
     """
 
     def __init__(self) -> None:
@@ -149,15 +149,15 @@ class Registry:
     def all(self) -> tuple[CheckSpec, ...]:
         return tuple(self)
 
-    def for_tier(self, tier: Tier) -> tuple[CheckSpec, ...]:
-        """Every check that runs at ``tier`` — i.e. every check at or below it.
+    def for_stage(self, stage: Stage) -> tuple[CheckSpec, ...]:
+        """Every check that runs at ``stage`` — i.e. every check at or below it.
 
         This is the sole definition of "what a gate run should contain," and
         the meta-check ``registry.completeness`` compares a report against it.
         If a check could escape the runner, it would have to escape this
         function first.
         """
-        return tuple(s for s in self if s.tier <= tier)
+        return tuple(s for s in self if s.stage <= stage)
 
     def ids(self) -> set[str]:
         return set(self._specs)
@@ -202,7 +202,7 @@ def check(
     id: str,  # noqa: A002 - `id` reads correctly at the call site; the shadowing is local
     title: str,
     falsified_by: Falsifier,
-    tier: str | Tier = Tier.FAST,
+    stage: str | Stage = Stage.FAST,
     tags: Iterable[str] = (),
     tier1: bool = False,
     registry: Registry | None = None,
@@ -224,14 +224,14 @@ def check(
         @celebrimbor.check(
             id="myapp.manifest",
             title="every artifact is listed in the manifest",
-            tier="fast",
+            stage="fast",
             falsified_by="tests/known-bad/manifest_missing_entry.json",
         )
         def check_manifest(ctx):
             ...
     """
     _validate(id, title, falsified_by)
-    resolved_tier = Tier.parse(tier)
+    resolved_stage = Stage.parse(stage)
     target = registry if registry is not None else _DEFAULT
 
     # An Unproven authored at the call site cannot know its own check id, so
@@ -249,7 +249,7 @@ def check(
                 id=id.strip(),
                 title=title.strip(),
                 fn=fn,
-                tier=resolved_tier,
+                stage=resolved_stage,
                 falsified_by=resolved_falsifier,
                 order=target.next_order(),
                 tags=frozenset(tags),

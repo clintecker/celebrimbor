@@ -28,7 +28,7 @@ from celebrimbor.config import Config
 from celebrimbor.context import Context
 from celebrimbor.ledgers.invariants import load_invariants
 from celebrimbor.registry import Registry
-from celebrimbor.result import CheckResult, Tier, Verdict
+from celebrimbor.result import CheckResult, Stage, Verdict
 from celebrimbor.runner import escaped, expected_ids, run, strays
 from tests.conftest import Project
 
@@ -44,7 +44,7 @@ def raising_check_adapter(check_id: str, title: str, fn, registry: Registry):
     @celebrimbor.check(
         id=check_id,
         title=title,
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by="tests/acceptance/test_integration_pattern.py",
         registry=registry,
     )
@@ -82,7 +82,7 @@ def test_app_can_register_and_run_domain_checks() -> None:
 
     root = Path(tempfile.mkdtemp())
     (root / "src").mkdir()
-    ctx = Context(config=Config.load(root), tier=Tier.FAST)
+    ctx = Context(config=Config.load(root), stage=Stage.FAST)
     report = run(ctx, registry=registry)
 
     assert report.by_id("acme.orders").verdict is Verdict.PASS
@@ -90,7 +90,7 @@ def test_app_can_register_and_run_domain_checks() -> None:
     # The completeness guarantee covers app checks exactly as it covers builtins.
     assert not escaped(report, registry)
     assert not strays(report, registry)
-    assert report.ids() == expected_ids(registry, Tier.FAST)
+    assert report.ids() == expected_ids(registry, Stage.FAST)
 
 
 def test_app_keeps_its_ledger_where_it_already_lives(project: Project) -> None:
@@ -136,7 +136,7 @@ def test_app_keeps_its_ledger_where_it_already_lives(project: Project) -> None:
     assert ledger.invariants["INV-1"].statement == "every order references a customer"
 
     # And the invariant gate, run against it, is green.
-    result = project.run("celebrimbor.invariants", tier=Tier.DEFAULT)
+    result = project.run("celebrimbor.invariants", stage=Stage.DEFAULT)
     assert result.verdict is Verdict.PASS
 
 
@@ -145,7 +145,7 @@ def test_public_api_surface_is_sufficient_for_an_integrator() -> None:
     # The documented seam.
     assert callable(celebrimbor.check)
     assert callable(celebrimbor.gate)
-    for name in ("CheckResult", "Finding", "Verdict", "Tier", "Unproven", "GateReport"):
+    for name in ("CheckResult", "Finding", "Verdict", "Stage", "Unproven", "GateReport"):
         assert hasattr(celebrimbor, name), f"celebrimbor.{name} must be public"
 
     # The deeper primitives an app's own checks build on — reachable as
@@ -158,12 +158,12 @@ def test_public_api_surface_is_sufficient_for_an_integrator() -> None:
     assert True  # the imports above are the assertion
 
 
-@pytest.mark.parametrize("tier", ["fast", "default", "full"])
-def test_gate_is_callable_programmatically_at_every_tier(tier: str, tmp_path) -> None:
+@pytest.mark.parametrize("stage", ["fast", "default", "full"])
+def test_gate_is_callable_programmatically_at_every_tier(stage: str, tmp_path) -> None:
     """An adopter drives the gate from its own harness, not only the CLI."""
     (tmp_path / "src").mkdir()
-    report = celebrimbor.gate(tier=tier, root=tmp_path)
+    report = celebrimbor.gate(stage=stage, root=tmp_path)
     # An empty project has no source, so builtins may refuse — but the call
     # itself must return a report with a real exit code, never raise.
     assert report.exit_code in (0, 1)
-    assert report.tier is celebrimbor.Tier.parse(tier)
+    assert report.stage is celebrimbor.Stage.parse(stage)

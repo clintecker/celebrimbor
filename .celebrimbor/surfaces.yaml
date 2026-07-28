@@ -185,7 +185,7 @@ modules:
   registry:
     role: pure
     status: ratified
-    pin: "8e1c04a063d1"
+    pin: "39b4375d34ad"
     overrides:
       Registry.clear: adapter
       Registry.register: adapter
@@ -196,7 +196,7 @@ modules:
   result:
     role: pure
     status: ratified
-    pin: "2d268a1135a1"
+    pin: "3fbdc10bb3a2"
     overrides:
       GateReport.add: adapter
   roles:

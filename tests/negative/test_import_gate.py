@@ -13,7 +13,7 @@ import pytest
 
 from celebrimbor.config import Config
 from celebrimbor.context import Context
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from celebrimbor.runner import run_spec
 from tests.conftest import Project
 
@@ -38,7 +38,7 @@ def _project(project: Project, *, opt_in: bool = True) -> Project:
 
 
 def _run(project: Project) -> object:
-    return run_spec(project.spec(_ID), Context(config=Config.load(project.root), tier=Tier.DEFAULT))
+    return run_spec(project.spec(_ID), Context(config=Config.load(project.root), stage=Stage.DEFAULT))
 
 
 def test_module_that_raises_on_import_is_red(project: Project) -> None:

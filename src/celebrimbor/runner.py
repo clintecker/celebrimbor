@@ -27,7 +27,7 @@ from collections.abc import Callable, Iterable
 
 from .context import Context
 from .registry import CheckSpec, Registry, default_registry
-from .result import CheckResult, GateReport, Tier
+from .result import CheckResult, GateReport, Stage
 
 Clock = Callable[[], float]
 """A monotonic seconds source. Injected so the timing the runner records is a
@@ -108,39 +108,39 @@ def run(
     ctx: Context,
     *,
     registry: Registry | None = None,
-    tier: Tier | None = None,
+    stage: Stage | None = None,
     clock: Clock = time.perf_counter,
 ) -> GateReport:
-    """Run every check registered at or below ``tier``.
+    """Run every check registered at or below ``stage``.
 
     The report is built incrementally and exposed on the context as it grows,
     so the terminal completeness check can compare what actually ran against
     what the registry says should have run.
     """
     reg = registry if registry is not None else default_registry()
-    resolved = tier if tier is not None else ctx.tier
-    report = GateReport(tier=resolved)
+    resolved = stage if stage is not None else ctx.stage
+    report = GateReport(stage=resolved)
     ctx.partial = report
 
     started = clock()
-    for spec in reg.for_tier(resolved):
+    for spec in reg.for_stage(resolved):
         report.add(run_spec(spec, ctx, clock=clock))
     report.duration_s = clock() - started
     return report
 
 
-def expected_ids(registry: Registry, tier: Tier) -> set[str]:
-    """What a complete run at ``tier`` must contain.
+def expected_ids(registry: Registry, stage: Stage) -> set[str]:
+    """What a complete run at ``stage`` must contain.
 
     Sole definition, used by both the terminal completeness check and the
     meta-test in celebrimbor's own suite.
     """
-    return {s.id for s in registry.for_tier(tier)}
+    return {s.id for s in registry.for_stage(stage)}
 
 
 def escaped(report: GateReport, registry: Registry) -> set[str]:
-    """Ids that should have run at the report's tier but are absent from it."""
-    return expected_ids(registry, report.tier) - report.ids()
+    """Ids that should have run at the report's stage but are absent from it."""
+    return expected_ids(registry, report.stage) - report.ids()
 
 
 def strays(report: GateReport, registry: Registry) -> set[str]:
@@ -168,7 +168,7 @@ def load_builtin_checks() -> tuple[str, ...]:
     return checks.load_all()
 
 
-def iter_specs(tier: str | Tier = Tier.FULL) -> Iterable[CheckSpec]:
-    """Every registered spec at or below ``tier``. The pytest seam uses this."""
+def iter_specs(stage: str | Stage = Stage.FULL) -> Iterable[CheckSpec]:
+    """Every registered spec at or below ``stage``. The pytest seam uses this."""
     load_builtin_checks()
-    return default_registry().for_tier(Tier.parse(tier))
+    return default_registry().for_stage(Stage.parse(stage))

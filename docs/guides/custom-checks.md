@@ -13,7 +13,7 @@ import celebrimbor
 @celebrimbor.check(
     id="myapp.manifest",
     title="every built artifact is listed in the manifest",
-    tier="fast",
+    stage="fast",
     falsified_by="tests/known-bad/manifest_missing_entry.json",
 )
 def check_manifest(ctx: celebrimbor.Context) -> celebrimbor.CheckResult:
@@ -68,7 +68,7 @@ A check receives a `Context` with everything it is allowed to know:
 - `ctx.root` — the project root (a `Path`).
 - `ctx.config` — resolved configuration, including source/test paths and the
   ledger locations.
-- `ctx.tier` — the tier being run.
+- `ctx.stage` — the stage being run.
 - `ctx.changed_files()` — repo-relative paths changed against the diff base, or
   `None` if the diff cannot be computed (treat `None` as a reason to refuse).
 - `ctx.memo(key, produce)` — compute an expensive artifact once per run and share

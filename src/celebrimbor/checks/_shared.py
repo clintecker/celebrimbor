@@ -1,6 +1,6 @@
 """Loaders shared across check modules, memoized on the context.
 
-The AST walk is the dominant cost of the fast tier, and five gates want the
+The AST walk is the dominant cost of the fast stage, and five gates want the
 same inventory. Every expensive artifact a check needs is produced through
 this module so it is computed exactly once per run.
 

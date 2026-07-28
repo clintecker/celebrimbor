@@ -24,7 +24,7 @@ import pytest
 from celebrimbor.config import Config
 from celebrimbor.context import Context
 from celebrimbor.registry import CheckSpec, default_registry
-from celebrimbor.result import CheckResult, Tier
+from celebrimbor.result import CheckResult, Stage
 from celebrimbor.runner import load_builtin_checks, run_spec
 
 
@@ -66,8 +66,8 @@ class Project:
 
     # -- running ------------------------------------------------------------
 
-    def context(self, tier: Tier = Tier.FAST, **kwargs: object) -> Context:
-        return Context(config=Config.load(self.root), tier=tier, **kwargs)  # type: ignore[arg-type]
+    def context(self, stage: Stage = Stage.FAST, **kwargs: object) -> Context:
+        return Context(config=Config.load(self.root), stage=stage, **kwargs)  # type: ignore[arg-type]
 
     def spec(self, check_id: str) -> CheckSpec:
         load_builtin_checks()

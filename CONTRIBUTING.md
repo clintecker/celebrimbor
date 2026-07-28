@@ -20,7 +20,7 @@ celebrimbor gate --full     # lint, types, format, structure, and the meta-gates
 python -m pytest            # the full suite, including every gate's negative fixtures
 ```
 
-Celebrimbor's own gate is green at every tier. A change that reddens it is not
+Celebrimbor's own gate is green at every stage. A change that reddens it is not
 ready.
 
 ## The one rule with no exceptions

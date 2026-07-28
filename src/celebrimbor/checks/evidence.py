@@ -22,7 +22,7 @@ import ast
 
 from ..context import Context
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..roles import Role
 from ..structure.complexity import cyclomatic
 from ..structure.evidence import (
@@ -129,7 +129,7 @@ def compute_pin(module: ModuleInfo) -> str | None:
 @check(
     id=_EVIDENCE,
     title="no callable contradicts the role it is declared to have",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     tier1=True,
     falsified_by="tests/negative/test_evidence_gate.py::test_verifier_that_cannot_fail_is_red",
 )
@@ -235,7 +235,7 @@ def _rows_to_pin(smap: SurfaceMap, inv: Inventory) -> list[tuple[SurfaceRow, Mod
 @check(
     id=_PIN,
     title="every ratified row is still about the code it ratified",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     tier1=True,
     falsified_by="tests/negative/test_evidence_gate.py::test_shape_drift_unratifies_row",
 )

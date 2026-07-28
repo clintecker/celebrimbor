@@ -92,7 +92,7 @@ cannot give you that; each sees only its own slice.
 
 And the reason a discipline this thorough is *adoptable* is **convention over
 configuration**. Roles are inferred, not authored. Known-bad is a directory, not
-a config block. Ratchets auto-baseline in CI. You do not wire nineteen tools —
+a config block. Ratchets auto-baseline in CI. You do not wire twenty tools —
 you run `celebrimbor init` and ratify a pre-filled map one line at a time. The
 config file exists for exceptions only. That is also what makes it resistant to
 AI hallucination: the conventions are enforced *structurally*, in the gate, not
@@ -146,24 +146,32 @@ callable may reach for instead of being handed. A `pure` function calling
 so is the whole reason adapters exist. An un-injected dependency is a claim the
 test cannot contradict.
 
-## The gate, tier by tier
+## The gate: two tiers, three stages
 
-Nineteen gates. Every one carries a falsifier.
+Twenty gates. Every one carries a falsifier. Two independent axes decide what
+runs — don't conflate them:
 
-**Tier 0 — `gate --fast`** (~10s, no ledger, passes on a fresh repo): lint,
-types, format, complexity/nesting/length budgets, cohesion (one domain per
-module), known-bad provenance, marker grammar.
+**Tiers — *what kind* of check.**
 
-**Tier 1 — opt-in** (authored, never reddens day one): surface-role
-completeness, naming drift, role evidence, ratification pins, capability
-injection, no-blind-verifier producers, invariant ledger, change-impact.
+- **Tier 0 — the commodity ladder** (no ledger, passes on a fresh repo): lint,
+  types, format, complexity/nesting/length budgets, cohesion (one domain per
+  module), known-bad provenance, marker grammar.
+- **Tier 1 — the obligation engine** (opt-in, authored, never reddens day one):
+  surface-role completeness, naming drift, role evidence, ratification pins,
+  capability injection, no-blind-verifier producers, invariant ledger,
+  change-impact, import-health.
 
-**PR tier — `gate`** adds the coverage ratchet. **Merge tier — `gate --full`**
-adds the mutation ratchet (survivor *identity*, not count).
+**Stages — *how deep* a run goes.** Each nests the cheaper one:
 
-Every gate **fails closed**: when it cannot prove something it refuses (red),
-never estimates. A missing tool in a trusted environment is red; a skip always
-carries its reason.
+- **`gate --fast`** (~10s, pre-commit): Tier 0 plus the cheap Tier 1 gates.
+- **`gate`** (~2min, PR): adds the coverage ratchet, invariants, change-impact.
+- **`gate --full`** (release): adds the mutation ratchet (survivor *identity*,
+  not count).
+
+A check has both: the Tier 1 `invariants` gate is tier 1, and runs at the PR
+stage. Every gate **fails closed**: when it cannot prove something it refuses
+(red), never estimates. A missing tool in a trusted environment is red; a skip
+always carries its reason.
 
 ## Custom checks
 
@@ -187,7 +195,7 @@ same ordered registry as the builtins, under the same guarantee that no check
 escapes the runner.
 
 ```python
-report = celebrimbor.gate(tier="fast")   # drive it programmatically
+report = celebrimbor.gate(stage="fast")   # drive it programmatically
 report.exit_code                          # 0 only if every check proved its claim
 ```
 

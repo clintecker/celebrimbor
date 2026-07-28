@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from tests.conftest import Project, _pin_all
 
 pytestmark = pytest.mark.negative
@@ -71,7 +71,7 @@ def _producer_project(project: Project) -> Project:
 def test_producer_without_ledger_entry_is_red(project: Project) -> None:
     """A producer with no ledger entry is a verifier that inspects nothing."""
     _producer_project(project)
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "producer-uncovered" in codes(result)
     assert any("app.render" in f.message for f in result.findings)
@@ -93,7 +93,7 @@ def test_full_ledger_entry_passes(project: Project) -> None:
             negative_fixture: tests/negative/test_render.py::test_empty_summary_caught
         """,
     )
-    assert project.run(_ID, tier=Tier.DEFAULT).verdict is Verdict.PASS
+    assert project.run(_ID, stage=Stage.DEFAULT).verdict is Verdict.PASS
 
 
 def test_verifier_that_is_not_a_verifier_is_red(project: Project) -> None:
@@ -114,7 +114,7 @@ def test_verifier_that_is_not_a_verifier_is_red(project: Project) -> None:
             negative_fixture: tests/negative/test_render.py::test_x
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "producer-verifier-miscast" in codes(result)
 
@@ -132,7 +132,7 @@ def test_missing_negative_fixture_is_red(project: Project) -> None:
             negative_fixture: tests/negative/does_not_exist.py::test_ghost
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "producer-fixture-absent" in codes(result)
 
@@ -178,7 +178,7 @@ def test_override_producer_is_caught(project: Project) -> None:
     )
     _pin_all(project)
 
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert any("app.mixed:build_report" in f.message for f in result.findings), (
         "an override-introduced producer must be demanded a ledger entry"
@@ -198,7 +198,7 @@ def test_expired_pending_is_red(project: Project) -> None:
             review_by: 2020-01-01
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "producer-pending-expired" in codes(result)
 
@@ -216,7 +216,7 @@ def test_unexpired_pending_is_allowed_but_visible(project: Project) -> None:
             review_by: 2099-01-01
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.PASS
     assert "pending" in result.summary
 
@@ -236,4 +236,4 @@ def test_no_producers_is_a_clean_pass(project: Project) -> None:
         """
     )
     _pin_all(project)
-    assert project.run(_ID, tier=Tier.DEFAULT).verdict is Verdict.PASS
+    assert project.run(_ID, stage=Stage.DEFAULT).verdict is Verdict.PASS

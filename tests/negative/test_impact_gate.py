@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from celebrimbor.runner import run_spec
 from tests.conftest import Project, _pin_all
 
@@ -29,7 +29,7 @@ def codes(result: object) -> set[str]:
 
 def _run_with_diff(project: Project, changed: tuple[str, ...]) -> object:
     """Run the impact gate with an injected changed-file set."""
-    ctx = project.context(tier=Tier.DEFAULT)
+    ctx = project.context(stage=Stage.DEFAULT)
     ctx.memo("git.changed_files", lambda: tuple(Path(p) for p in changed))
     return run_spec(project.spec(_ID), ctx)
 
@@ -125,7 +125,7 @@ def test_unknowable_diff_refuses_rather_than_passing(project: Project) -> None:
     and the gate must refuse rather than report that nothing changed.
     """
     _policy_project(project)
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.REFUSED
     assert "could not be determined" in result.summary
 

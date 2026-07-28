@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..context import Context
 from ..registry import CheckSpec, check, default_registry
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 
 
 def _is_builtin(spec: CheckSpec) -> bool:
@@ -24,7 +24,7 @@ def _resolve(root: Path, ref: str) -> bool:
 
     References are pytest-flavoured: ``tests/negative/test_x.py::test_y``. Only
     the file part is resolved here — proving the *node* exists means running
-    pytest's collector, which is a fast-tier budget we do not have. Celebrimbor's
+    pytest's collector, which is a fast-stage budget we do not have. Celebrimbor's
     own suite does the stronger check on its own falsifiers, where it can.
     """
     file_part = ref.split("::", 1)[0].strip()
@@ -36,7 +36,7 @@ def _resolve(root: Path, ref: str) -> bool:
 @check(
     id="celebrimbor.falsifiers",
     title="every registered check names something that turns it red",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_falsifier_gate.py::test_unproven_past_review_date_is_red",
 )
 def check_falsifiers(ctx: Context) -> CheckResult:
@@ -123,7 +123,7 @@ def check_falsifiers(ctx: Context) -> CheckResult:
 @check(
     id="celebrimbor.registry",
     title="the registry is internally consistent",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_falsifier_gate.py::test_duplicate_check_id_is_rejected",
 )
 def check_registry_shape(ctx: Context) -> CheckResult:

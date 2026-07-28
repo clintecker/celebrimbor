@@ -18,7 +18,7 @@ from ..commodity.tools import ToolMissingError
 from ..commodity.tools import run as run_tool
 from ..context import Context
 from ..registry import check
-from ..result import CheckResult, Tier
+from ..result import CheckResult, Stage
 
 _LINT = "celebrimbor.lint"
 _FORMAT = "celebrimbor.format"
@@ -101,7 +101,7 @@ def _run(
 @check(
     id=_LINT,
     title="the linter finds nothing",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_commodity_gate.py::test_lint_violation_is_red",
 )
 def check_lint(ctx: Context) -> CheckResult:
@@ -119,7 +119,7 @@ def check_lint(ctx: Context) -> CheckResult:
 @check(
     id=_FORMAT,
     title="every file is formatted",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_commodity_gate.py::test_unformatted_file_is_red",
 )
 def check_format(ctx: Context) -> CheckResult:
@@ -142,7 +142,7 @@ def check_format(ctx: Context) -> CheckResult:
 @check(
     id=_TYPES,
     title="the type checker finds nothing",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_commodity_gate.py::test_type_error_is_red",
 )
 def check_types(ctx: Context) -> CheckResult:

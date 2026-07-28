@@ -24,7 +24,7 @@ from celebrimbor.ratchets.mutation import (
     rebaseline as mut_rebaseline,
     resolved_survivors,
 )
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from celebrimbor.runner import run_spec
 from tests.conftest import Project
 
@@ -201,7 +201,7 @@ def test_coverage_drop_is_red(project: Project) -> None:
         ".celebrimbor/baselines/coverage.yaml",
         "version: 1\nenvironment: ci\nfloors:\n  app.core: 90.0\n",
     )
-    ctx = project.context(tier=Tier.DEFAULT)
+    ctx = project.context(stage=Stage.DEFAULT)
     ctx.memo("ratchet.coverage", lambda: {"app.core": 80.0})
     result = run_spec(project.spec("celebrimbor.coverage"), ctx)
     assert result.verdict is Verdict.FAIL
@@ -211,7 +211,7 @@ def test_coverage_drop_is_red(project: Project) -> None:
 def test_first_run_in_ci_auto_baselines(project: Project) -> None:
     """Auto-baseline closes the day-two-red gap: first CI run records and passes."""
     _ci_project(project)
-    ctx = project.context(tier=Tier.DEFAULT)
+    ctx = project.context(stage=Stage.DEFAULT)
     ctx.memo("ratchet.coverage", lambda: {"app.core": 88.0})
     result = run_spec(project.spec("celebrimbor.coverage"), ctx)
     assert result.verdict is Verdict.PASS
@@ -234,7 +234,7 @@ def test_no_baseline_on_dev_box_skips(project: Project) -> None:
         """,
     )
     project.surfaces("version: 1\nmodules: {}\n")
-    ctx = project.context(tier=Tier.DEFAULT)
+    ctx = project.context(stage=Stage.DEFAULT)
     ctx.memo("ratchet.coverage", lambda: {"app.core": 88.0})
     result = run_spec(project.spec("celebrimbor.coverage"), ctx)
     assert result.verdict is Verdict.SKIPPED
@@ -248,7 +248,7 @@ def test_new_survivor_with_same_count_is_red(project: Project) -> None:
         ".celebrimbor/baselines/mutation.yaml",
         "version: 1\nenvironment: ci\nsurvivors:\n  - src/app/a.py:10:and->or\n  - src/app/a.py:20:+->-\n",
     )
-    ctx = project.context(tier=Tier.FULL)
+    ctx = project.context(stage=Stage.FULL)
     ctx.memo(
         "ratchet.survivors",
         lambda: frozenset(

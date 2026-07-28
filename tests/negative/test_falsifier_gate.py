@@ -12,7 +12,7 @@ import datetime as dt
 import pytest
 
 from celebrimbor.registry import DuplicateCheckError, Registry, Unproven, check
-from celebrimbor.result import CheckResult, Tier, Verdict
+from celebrimbor.result import CheckResult, Stage, Verdict
 from celebrimbor.waiver import WaiverError
 from tests.conftest import Project
 
@@ -35,7 +35,7 @@ def test_unproven_past_review_date_is_red(project: Project) -> None:
     check(
         id="app.legacy",
         title="a check nobody has written a falsifier for",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by=Unproven("no negative fixture yet", review_by="2020-01-01"),
         registry=registry,
     )(_noop)
@@ -65,7 +65,7 @@ def test_unproven_within_review_date_is_allowed_but_visible(project: Project) ->
     check(
         id="app.pending",
         title="a check with dated debt",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by=Unproven("fixture coming", review_by=future),
         registry=registry,
     )(_noop)
@@ -90,7 +90,7 @@ def test_app_check_with_missing_falsifier_is_red(project: Project) -> None:
     check(
         id="app.claims",
         title="a check pointing at a file that does not exist",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by="tests/negative/test_nothing_here.py::test_absent",
     )(_noop)
     try:
@@ -109,9 +109,9 @@ def test_duplicate_check_id_is_rejected() -> None:
     while looking present.
     """
     registry = Registry()
-    check(id="app.dup", title="first", tier=Tier.FAST, falsified_by="a", registry=registry)(_noop)
+    check(id="app.dup", title="first", stage=Stage.FAST, falsified_by="a", registry=registry)(_noop)
     with pytest.raises(DuplicateCheckError, match="already registered"):
-        check(id="app.dup", title="second", tier=Tier.FAST, falsified_by="b", registry=registry)(
+        check(id="app.dup", title="second", stage=Stage.FAST, falsified_by="b", registry=registry)(
             _noop
         )
 
@@ -119,15 +119,15 @@ def test_duplicate_check_id_is_rejected() -> None:
 def test_check_without_falsifier_cannot_be_written() -> None:
     """`falsified_by` has no default. That is the whole point of the decorator."""
     with pytest.raises(TypeError, match="falsified_by"):
-        check(id="app.x", title="t", tier=Tier.FAST)(_noop)  # type: ignore[call-arg]
+        check(id="app.x", title="t", stage=Stage.FAST)(_noop)  # type: ignore[call-arg]
 
 
 def test_empty_falsifier_is_rejected() -> None:
     """A blank string is not a falsifier; it is the absence of one, disguised."""
     with pytest.raises(ValueError, match="must name a real falsifier"):
-        check(id="app.y", title="t", tier=Tier.FAST, falsified_by="   ")(_noop)
+        check(id="app.y", title="t", stage=Stage.FAST, falsified_by="   ")(_noop)
     with pytest.raises(ValueError, match="cannot be an empty tuple"):
-        check(id="app.z", title="t", tier=Tier.FAST, falsified_by=())(_noop)
+        check(id="app.z", title="t", stage=Stage.FAST, falsified_by=())(_noop)
 
 
 def test_unproven_requires_a_reason_and_a_date() -> None:

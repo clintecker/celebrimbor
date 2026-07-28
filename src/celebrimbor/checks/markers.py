@@ -29,7 +29,7 @@ from pathlib import Path
 
 from ..context import Context
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 
 _ID = "celebrimbor.markers"
 
@@ -145,7 +145,7 @@ def _scan_file(path: Path) -> list[MarkerProblem]:
 @check(
     id=_ID,
     title="test markers mean something: assertions present, xfail/skip explained",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_marker_gate.py::test_assertionless_test_is_red",
 )
 def check_markers(ctx: Context) -> CheckResult:

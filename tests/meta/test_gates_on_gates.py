@@ -25,7 +25,7 @@ import pytest
 
 from celebrimbor.checks import CHECK_MODULES
 from celebrimbor.registry import default_registry
-from celebrimbor.result import Tier
+from celebrimbor.result import Stage
 from celebrimbor.runner import escaped, expected_ids, load_builtin_checks, run, strays
 from tests.conftest import Project
 
@@ -113,31 +113,31 @@ def test_terminal_check_runs_last() -> None:
     )
 
 
-@pytest.mark.parametrize("tier", [Tier.FAST, Tier.DEFAULT, Tier.FULL])
-def test_terminal_check_is_expected_at_every_tier(tier: Tier) -> None:
+@pytest.mark.parametrize("stage", [Stage.FAST, Stage.DEFAULT, Stage.FULL])
+def test_terminal_check_is_expected_at_every_tier(stage: Stage) -> None:
     """Where the regress stops.
 
     If the terminal check itself does not run, nothing reports that the
     terminal check did not run. That regress has to terminate in a static
     assertion, and this is it.
     """
-    assert "celebrimbor.completeness" in expected_ids(default_registry(), tier)
+    assert "celebrimbor.completeness" in expected_ids(default_registry(), stage)
 
 
-@pytest.mark.parametrize("tier", [Tier.FAST, Tier.DEFAULT, Tier.FULL])
-def test_no_check_escapes_the_runner(project: Project, tier: Tier) -> None:
-    """A real run at each tier contains exactly what the registry says it should."""
+@pytest.mark.parametrize("stage", [Stage.FAST, Stage.DEFAULT, Stage.FULL])
+def test_no_check_escapes_the_runner(project: Project, stage: Stage) -> None:
+    """A real run at each stage contains exactly what the registry says it should."""
     project.module("app.thing", '"""Thing."""\n\n\ndef go() -> int:\n    """Go."""\n    return 1\n')
     registry = default_registry()
-    report = run(project.context(tier=tier), registry=registry, tier=tier)
+    report = run(project.context(stage=stage), registry=registry, stage=stage)
 
     assert not escaped(report, registry), (
-        f"check(s) registered for tier {tier.label} did not run: {sorted(escaped(report, registry))}"
+        f"check(s) registered for stage {stage.label} did not run: {sorted(escaped(report, registry))}"
     )
     assert not strays(report, registry), (
         f"report contains unregistered result(s): {sorted(strays(report, registry))}"
     )
-    assert report.ids() == expected_ids(registry, tier)
+    assert report.ids() == expected_ids(registry, stage)
 
 
 def test_every_check_declares_a_title_and_falsifier() -> None:
@@ -158,9 +158,9 @@ def test_tier1_checks_skip_rather_than_fail_without_their_ledger(project: Projec
     adoption wedge would be red on day one for every project.
     """
     project.module("app.thing", '"""Thing."""\n\n\ndef go() -> int:\n    """Go."""\n    return 1\n')
-    report = run(project.context(), registry=default_registry(), tier=Tier.FAST)
+    report = run(project.context(), registry=default_registry(), stage=Stage.FAST)
 
-    for spec in default_registry().for_tier(Tier.FAST):
+    for spec in default_registry().for_stage(Stage.FAST):
         if not spec.tier1:
             continue
         result = report.by_id(spec.id)

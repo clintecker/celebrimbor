@@ -7,10 +7,10 @@ never estimate.
 
 Public surface, in its entirety::
 
-    celebrimbor.gate(tier="fast")     # run the gate programmatically
+    celebrimbor.gate(stage="fast")     # run the gate programmatically
     @celebrimbor.check(...)           # register an app-specific check
     celebrimbor.Unproven(...)         # a dated admission of missing falsifier
-    celebrimbor.CheckResult, Finding, Verdict, Tier   # what a check returns
+    celebrimbor.CheckResult, Finding, Verdict, Stage   # what a check returns
 
 That is the whole documented seam. There is deliberately no exposed registry
 object: a raw registry invites app code to mutate ordering or bypass
@@ -18,7 +18,7 @@ registration, and the completeness guarantee is only as good as the claim that
 ``@check`` is the one door.
 
 Imports here are kept cheap — no click, no rich, no yaml at module import —
-because the fast tier has a ~10s budget and interpreter startup is the one
+because the fast stage has a ~10s budget and interpreter startup is the one
 cost no check can amortize.
 """
 
@@ -27,20 +27,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .registry import Unproven, check
-from .result import CheckResult, Finding, GateReport, Tier, Verdict
+from .result import CheckResult, Finding, GateReport, Stage, Verdict
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from .context import Context
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "CheckResult",
     "Finding",
     "GateReport",
-    "Tier",
+    "Stage",
     "Unproven",
     "Verdict",
     "__version__",
@@ -50,7 +50,7 @@ __all__ = [
 
 
 def gate(
-    tier: str | Tier = Tier.FAST,
+    stage: str | Stage = Stage.FAST,
     *,
     root: Path | str | None = None,
     diff_base: str | None = None,
@@ -66,12 +66,12 @@ def gate(
     from .runner import load_builtin_checks, run
 
     load_builtin_checks()
-    ctx = _Context.for_root(root, tier=tier, diff_base=diff_base)
+    ctx = _Context.for_root(root, stage=stage, diff_base=diff_base)
     return run(ctx)
 
 
-def _context_for(root: Path | str | None = None, tier: str | Tier = Tier.FAST) -> Context:
+def _context_for(root: Path | str | None = None, stage: str | Stage = Stage.FAST) -> Context:
     """Internal helper for the test seam; not part of the public API."""
     from .context import Context as _Context
 
-    return _Context.for_root(root, tier=tier)
+    return _Context.for_root(root, stage=stage)

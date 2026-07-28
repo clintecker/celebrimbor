@@ -29,7 +29,7 @@ from ..commodity.tools import ToolMissingError
 from ..commodity.tools import run as run_tool
 from ..context import Context
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..yamlio import YamlError, expect_mapping, load_mapping
 
 _ID = "celebrimbor.known_bad"
@@ -121,7 +121,7 @@ def _mypy_codes(output: str) -> set[str]:
 @check(
     id=_ID,
     title="every known-bad file is rejected by its checker with its diagnostic",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_known_bad_gate.py::test_known_bad_file_not_actually_rejected_is_red",
 )
 def check_known_bad(ctx: Context) -> CheckResult:

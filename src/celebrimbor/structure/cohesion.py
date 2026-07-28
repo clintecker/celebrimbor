@@ -2,7 +2,7 @@
 
 The naive rule is "one public class per file." It is wrong, and celebrimbor's
 own source falsified it within a minute of the gate first running:
-``result.py`` defines ``Tier``, ``Verdict``, ``Finding``, ``CheckResult`` and
+``result.py`` defines ``Stage``, ``Verdict``, ``Finding``, ``CheckResult`` and
 ``GateReport``. Five classes, *one* domain — a value vocabulary whose members
 are meaningless apart from each other. Splitting them into five files would
 make the code worse, and the rule would have demanded it.

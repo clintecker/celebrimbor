@@ -5,7 +5,7 @@ wiring," and a CLI that grows subcommands is a CLI that has started asking the
 adopter to learn it.
 
 Imports are deliberately deferred. ``click`` and ``rich`` together cost most of
-a tenth of a second at import, the fast tier has a ~10s budget, and none of
+a tenth of a second at import, the fast stage has a ~10s budget, and none of
 that budget should go to code that only formats output.
 """
 
@@ -19,7 +19,7 @@ from typing import Any
 import click
 
 from . import __version__
-from .result import Tier
+from .result import Stage
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,7 +33,7 @@ class GateOptions:
     a description of the run.
     """
 
-    tier_flag: str | None = None
+    stage_flag: str | None = None
     root: Path | None = None
     diff_base: str | None = None
     verbose: bool = False
@@ -83,8 +83,8 @@ def init(surfaces: bool, root: Path | None, force: bool) -> None:
 
 
 @main.command()
-@click.option("--fast", "tier_flag", flag_value="fast", help="Pre-commit tier (~10s).")
-@click.option("--full", "tier_flag", flag_value="full", help="Merge/release tier.")
+@click.option("--fast", "stage_flag", flag_value="fast", help="Pre-commit stage (~10s).")
+@click.option("--full", "stage_flag", flag_value="full", help="Merge/release stage.")
 @click.option(
     "--root",
     type=click.Path(file_okay=False, path_type=Path),
@@ -119,11 +119,11 @@ def gate(**options: Any) -> None:
             "written reason is a floor that will keep moving."
         )
 
-    tier = Tier.parse(opts.tier_flag or "default")
+    stage = Stage.parse(opts.stage_flag or "default")
     load_builtin_checks()
     ctx = Context.for_root(
         opts.root,
-        tier=tier,
+        stage=stage,
         diff_base=opts.diff_base,
         update_baselines=opts.update_baselines,
         update_reason=opts.reason,
@@ -208,7 +208,7 @@ def explain() -> None:
     for spec in default_registry():
         marker = " [tier1]" if spec.tier1 else ""
         falsifier = spec.unproven or ", ".join(spec.falsifier_paths)
-        click.echo(f"  {spec.tier.label:<8} {spec.id}{marker}")
+        click.echo(f"  {spec.stage.label:<8} {spec.id}{marker}")
         click.echo(f"           {spec.title}")
         click.echo(f"           [dim]falsified by: {falsifier}")
     click.echo()

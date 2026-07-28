@@ -11,7 +11,7 @@ gate's output order) is deliberate. Second, celebrimbor's own test suite walks
 this package on disk and asserts every module defining a ``@check`` appears in
 that list — so forgetting to add one is caught by a test, not by nobody.
 
-Order matters twice over: cheap checks first, so a fast tier surfaces its
+Order matters twice over: cheap checks first, so a fast stage surfaces its
 failures early; and ``terminal`` last, because the completeness check compares
 the accumulated report against the registry and must therefore run after
 everything it is checking.

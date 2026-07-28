@@ -14,14 +14,14 @@ green about was never examined.
 Note what it cannot catch: itself. If the terminal check does not run, nothing
 reports that the terminal check did not run. That regress stops at
 celebrimbor's own test suite, which asserts this check is present in every
-tier's expected set — the one place a static assertion is enough.
+stage's expected set — the one place a static assertion is enough.
 """
 
 from __future__ import annotations
 
 from ..context import Context
 from ..registry import check, default_registry
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..runner import escaped, strays
 
 _ID = "celebrimbor.completeness"
@@ -30,7 +30,7 @@ _ID = "celebrimbor.completeness"
 @check(
     id=_ID,
     title="no registered check escaped the runner",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_runner_completeness.py::test_dropped_check_is_red",
 )
 def check_runner_completeness(ctx: Context) -> CheckResult:
@@ -54,7 +54,7 @@ def check_runner_completeness(ctx: Context) -> CheckResult:
     missing = escaped(report, registry) - {_ID}
     findings.extend(
         Finding(
-            message=f"check {check_id!r} is registered for tier {report.tier.label} but did not run",
+            message=f"check {check_id!r} is registered for stage {report.stage.label} but did not run",
             code="runner-escaped",
             hint="a check that stops running is a gate that silently disappeared",
         )
@@ -82,5 +82,5 @@ def check_runner_completeness(ctx: Context) -> CheckResult:
 
     ran = len(report) + 1
     return CheckResult.passed(
-        _ID, f"{ran}/{ran} registered check(s) ran at tier {report.tier.label}"
+        _ID, f"{ran}/{ran} registered check(s) ran at stage {report.stage.label}"
     )

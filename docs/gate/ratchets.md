@@ -15,7 +15,7 @@ across both ratchets, and all three are hard-won:
 
 ## Coverage
 
-`celebrimbor.coverage` (PR tier) enforces a per-module coverage floor that may
+`celebrimbor.coverage` (PR stage) enforces a per-module coverage floor that may
 only rise. On the **first run in CI** with no baseline, it records the current
 numbers and passes — this closes the "existing repo goes red on day two" gap.
 Every run after ratchets against them.
@@ -40,7 +40,7 @@ To lower a floor or accept new code below the minimum, `celebrimbor gate
 
 ## Mutation — survivor identity, not count
 
-`celebrimbor.mutation` (merge tier) is the distinctive one. A mutation run seeds
+`celebrimbor.mutation` (release stage) is the distinctive one. A mutation run seeds
 deliberate bugs and reports which the suite failed to catch — the *survivors*.
 The naive ratchet tracks how many survive and demands the number not grow. **That
 misses the failure that matters:** a survivor set that changes members while

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from celebrimbor.ledgers.invariants import load_invariants, render_docs
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from celebrimbor.yamlio import YamlError
 from tests.conftest import Project
 
@@ -54,7 +54,7 @@ def test_missing_enforcer_is_red(project: Project) -> None:
             enforced_by: app.orders:validate_order_RENAMED
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "invariant-enforcer-absent" in codes(result)
 
@@ -72,7 +72,7 @@ def test_resolving_enforcer_passes(project: Project) -> None:
             enforced_by: app.orders:validate_order
         """,
     )
-    assert project.run(_ID, tier=Tier.DEFAULT).verdict is Verdict.PASS
+    assert project.run(_ID, stage=Stage.DEFAULT).verdict is Verdict.PASS
 
 
 def test_critical_without_negative_proof_is_rejected_at_load(project: Project) -> None:
@@ -112,7 +112,7 @@ def test_critical_with_missing_proof_file_is_red(project: Project) -> None:
             negative_proof: tests/negative/gone.py::test_orphan_rejected
         """,
     )
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.FAIL
     assert "invariant-proof-absent" in codes(result)
 
@@ -120,14 +120,14 @@ def test_critical_with_missing_proof_file_is_red(project: Project) -> None:
 def test_empty_ledger_refuses_rather_than_passes(project: Project) -> None:
     """An empty ledger checks nothing, which is not nothing-to-check."""
     project.write(".celebrimbor/invariants.yaml", "version: 1\ninvariants: {}\n")
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.REFUSED
 
 
 def test_absent_ledger_skips(project: Project) -> None:
     """Opt-in: no ledger means skipped, not passed and not red."""
     _project_with_enforcer(project)
-    result = project.run(_ID, tier=Tier.DEFAULT)
+    result = project.run(_ID, stage=Stage.DEFAULT)
     assert result.verdict is Verdict.SKIPPED
     assert not result.proved
 

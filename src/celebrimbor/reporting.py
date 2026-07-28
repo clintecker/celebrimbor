@@ -40,7 +40,7 @@ def render(report: GateReport, *, verbose: bool = False) -> None:
 
     console = Console(stderr=False, highlight=False)
     console.print()
-    console.print(f"[bold]celebrimbor gate[/] [dim]— tier {report.tier.label}[/]")
+    console.print(f"[bold]celebrimbor gate[/] [dim]— stage {report.stage.label}[/]")
     console.print()
 
     for result in report:
@@ -121,7 +121,7 @@ def _summary_line(report: GateReport) -> str:
 
 def render_plain(report: GateReport) -> str:
     """A no-colour rendering, for logs, CI annotations and tests."""
-    lines = [f"celebrimbor gate — tier {report.tier.label}"]
+    lines = [f"celebrimbor gate — stage {report.stage.label}"]
     for result in report:
         lines.append(f"{result.verdict.glyph} {result.check_id}: {result.summary}")
         if result.reason and result.verdict is not Verdict.SKIPPED:

@@ -47,7 +47,7 @@ evidence and capability gates will surface real findings: a `verifier` that can'
 fail, an `adapter` label on a pure helper, a `pure` function that reaches for the
 clock. Each is a one-line override, a reclassification, or a genuine fix.
 
-## 3. Ledgers (PR tier)
+## 3. Ledgers (PR stage)
 
 If you have producers, write the producer ledger — each names its verifier and a
 negative fixture. Anything not ready goes in `pending:` with a review date.
@@ -57,13 +57,13 @@ with the critical ones; each needs a `negative_proof`. Once invariants exist, th
 impact gate begins governing changes to your policy-role modules.
 
 ```bash
-celebrimbor gate          # PR tier: + coverage ratchet, invariants, impact
+celebrimbor gate          # PR stage: + coverage ratchet, invariants, impact
 ```
 
 The coverage ratchet auto-baselines on its first run *in CI* and only rises
 after.
 
-## 4. Mutation (merge tier)
+## 4. Mutation (release stage)
 
 ```bash
 celebrimbor gate --full   # + mutation

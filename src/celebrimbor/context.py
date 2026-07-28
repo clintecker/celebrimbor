@@ -1,7 +1,7 @@
 """The object every check receives.
 
-``Context`` is deliberately thin: a project root, resolved config, the tier
-being run, and a memo table. The memo table is what makes the ~10s fast tier
+``Context`` is deliberately thin: a project root, resolved config, the stage
+being run, and a memo table. The memo table is what makes the ~10s fast stage
 possible — the surface inventory is an AST walk over the whole source tree and
 several gates need it, so it is computed once per run and shared.
 
@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar
 
 from .config import Config
-from .result import Tier
+from .result import Stage
 
 if TYPE_CHECKING:
     from .result import GateReport
@@ -35,7 +35,7 @@ class Context:
     """Everything a check is allowed to know about the run."""
 
     config: Config
-    tier: Tier = Tier.FAST
+    stage: Stage = Stage.FAST
     diff_base: str | None = None
     """Git ref the impact gate diffs against. ``None`` means "work out the
     merge base with the default branch," which is what a PR wants."""
@@ -131,7 +131,7 @@ class Context:
         cls,
         root: Path | str | None = None,
         *,
-        tier: str | Tier = Tier.FAST,
+        stage: str | Stage = Stage.FAST,
         **kwargs: object,
     ) -> Context:
-        return cls(config=Config.load(root), tier=Tier.parse(tier), **kwargs)  # type: ignore[arg-type]
+        return cls(config=Config.load(root), stage=Stage.parse(stage), **kwargs)  # type: ignore[arg-type]

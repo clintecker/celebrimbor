@@ -28,33 +28,38 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 
-class Tier(enum.IntEnum):
-    """Gate tiers, ordered by cost.
+class Stage(enum.IntEnum):
+    """*When* a run happens, ordered by cost — the pre-commit / PR / release axis.
 
-    A check declares the *cheapest* tier at which it is willing to run; a gate
-    invocation runs every check whose tier is at or below the requested one.
+    Not to be confused with a check's **tier** (``tier1: bool`` — whether it
+    belongs to the Tier 0 commodity ladder or the Tier 1 obligation engine).
+    Tier is *what kind* of check; stage is *how deep a run goes*. A single check
+    has both: e.g. the Tier 1 ``invariants`` gate runs at the ``DEFAULT`` stage.
+
+    A check declares the *cheapest* stage at which it is willing to run; a gate
+    invocation runs every check whose stage is at or below the requested one.
     The ordering is the whole point of the ``IntEnum``: ``FAST <= DEFAULT``
     is the membership test.
     """
 
     FAST = 1
-    """Pre-commit tier. Budget: ~10s. Lint, types, format, known-bad, surface."""
+    """Pre-commit stage. Budget: ~10s. Lint, types, format, known-bad, surface."""
 
     DEFAULT = 2
-    """PR tier. Budget: ~2min. Adds coverage ratchet, invariants, impact gate."""
+    """PR stage. Budget: ~2min. Adds coverage ratchet, invariants, impact gate."""
 
     FULL = 3
-    """Merge/release tier. Adds mutation and container/integration steps."""
+    """Merge/release stage. Adds mutation and container/integration steps."""
 
     @classmethod
-    def parse(cls, value: str | Tier) -> Tier:
-        if isinstance(value, Tier):
+    def parse(cls, value: str | Stage) -> Stage:
+        if isinstance(value, Stage):
             return value
         try:
             return cls[value.strip().upper()]
         except KeyError:
             valid = ", ".join(t.name.lower() for t in cls)
-            raise ValueError(f"unknown tier {value!r}; expected one of {valid}") from None
+            raise ValueError(f"unknown stage {value!r}; expected one of {valid}") from None
 
     @property
     def label(self) -> str:
@@ -278,7 +283,7 @@ class CheckResult:
 class GateReport:
     """The outcome of a whole gate run."""
 
-    tier: Tier
+    stage: Stage
     results: list[CheckResult] = field(default_factory=list)
     duration_s: float = 0.0
 

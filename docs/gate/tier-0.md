@@ -1,4 +1,4 @@
-# Tier 0 — the ladder
+# Tier 0 — the commodity ladder
 
 Tier 0 is the commodity ladder plus the structure gates: the checks that need no
 ledger, run in seconds, and are green on a fresh repo. This is the adoption

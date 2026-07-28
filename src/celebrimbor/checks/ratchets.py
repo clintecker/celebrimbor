@@ -1,4 +1,4 @@
-"""The ratchet gates: coverage floor (PR tier) and mutation survivors (merge tier).
+"""The ratchet gates: coverage floor (PR stage) and mutation survivors (merge stage).
 
 Both follow the same shape — acquire the current measurement, then compare it
 against a committed baseline with a pure comparator — and both delegate the
@@ -24,7 +24,7 @@ from ..ratchets import coverage as cov
 from ..ratchets import mutation as mut
 from ..ratchets.baseline import BaselineEnvironmentError
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..yamlio import YamlError
 
 _COVERAGE = "celebrimbor.coverage"
@@ -44,7 +44,7 @@ def _acquire_coverage(ctx: Context) -> dict[str, float] | str:
     """Current per-module coverage, or a string explaining why we could not.
 
     Reads an existing ``.coverage`` data file via ``coverage json``. The PR
-    tier expects the test run to have already produced it; the gate measures,
+    stage expects the test run to have already produced it; the gate measures,
     it does not run the suite itself.
     """
 
@@ -68,7 +68,7 @@ def _acquire_coverage(ctx: Context) -> dict[str, float] | str:
 @check(
     id=_COVERAGE,
     title="per-module coverage only rises",
-    tier=Tier.DEFAULT,
+    stage=Stage.DEFAULT,
     tier1=True,
     falsified_by="tests/negative/test_ratchet_gate.py::test_coverage_drop_is_red",
 )
@@ -172,7 +172,7 @@ def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | str:
 
     Injectable via the ``ratchet.survivors`` memo for tests; in production the
     gate reads the mutation tool's results. Mutation is genuinely slow, which
-    is why this whole gate is merge-tier only.
+    is why this whole gate is merge-stage only.
     """
     memoized = ctx._memo.get("ratchet.survivors")
     if memoized is not None:
@@ -183,7 +183,7 @@ def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | str:
 @check(
     id=_MUTATION,
     title="no new mutant survives (survivor identity, not count)",
-    tier=Tier.FULL,
+    stage=Stage.FULL,
     tier1=True,
     falsified_by="tests/negative/test_ratchet_gate.py::test_new_survivor_with_same_count_is_red",
 )

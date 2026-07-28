@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from ..context import Context
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..surface import naming
 from ..surface.audit import SurfaceAudit, audit, missing_row_snippet
 from ..surface.inventory import Inventory
@@ -81,7 +81,7 @@ def _expired_findings(result: SurfaceAudit) -> list[Finding]:
 @check(
     id=_COMPLETENESS,
     title="every public callable is accounted for in a ratified surface map",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     tier1=True,
     falsified_by="tests/negative/test_surface_gate.py::test_uncovered_callable_is_red",
 )
@@ -157,7 +157,7 @@ def check_surface_completeness(ctx: Context) -> CheckResult:
 @check(
     id=_NAMING,
     title="no callable's name promises more proof than its role demands",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     tier1=True,
     falsified_by="tests/negative/test_surface_gate.py::test_naming_conflict_is_red",
 )

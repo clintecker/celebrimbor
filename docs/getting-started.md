@@ -45,7 +45,7 @@ the fix.
 ...
 ```
 
-The three tiers:
+The three stages:
 
 ```bash
 celebrimbor gate --fast    # pre-commit: lint, types, format, structure, fixtures  (~10s)
@@ -89,7 +89,7 @@ and as the only place ratchets may take a baseline.
 # .github/workflows/gate.yml
 - run: pip install -e ".[dev]"
 - run: coverage run -m pytest      # produces the .coverage the ratchet reads
-- run: celebrimbor gate            # PR tier
+- run: celebrimbor gate            # PR stage
 ```
 
 ## Drive it from code
@@ -97,7 +97,7 @@ and as the only place ratchets may take a baseline.
 ```python
 import celebrimbor
 
-report = celebrimbor.gate(tier="fast")
+report = celebrimbor.gate(stage="fast")
 if not report.ok:
     for result in report.red:
         print(result.check_id, result.summary)

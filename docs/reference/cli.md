@@ -33,9 +33,9 @@ celebrimbor gate [--fast | --full] [OPTIONS]
 
 | Option | Effect |
 |---|---|
-| `--fast` | pre-commit tier (~10s) |
-| (default) | PR tier (~2min) — adds coverage ratchet, invariants, impact |
-| `--full` | merge/release tier — adds mutation |
+| `--fast` | pre-commit stage (~10s) |
+| (default) | PR stage (~2min) — adds coverage ratchet, invariants, impact |
+| `--full` | release stage — adds mutation |
 | `--root DIR` | project root (default: cwd) |
 | `--diff-base REF` | git ref the impact gate diffs against |
 | `-v`, `--verbose` | show hints, skips, and full findings |

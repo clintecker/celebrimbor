@@ -25,7 +25,7 @@ from ..ratchets.structure import (
     write_structure_baseline,
 )
 from ..registry import check
-from ..result import CheckResult, Finding, Tier
+from ..result import CheckResult, Finding, Stage
 from ..structure.capabilities import scan_callable, violations
 from ..structure.cohesion import analyze
 from ..structure.complexity import measure_module
@@ -199,7 +199,7 @@ def _complexity_breaches(ctx: Context) -> list[Breach] | CheckResult:
 @check(
     id=_COMPLEXITY,
     title="no callable or module exceeds its structural budget",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     falsified_by="tests/negative/test_structure_gate.py::test_complex_function_is_red",
 )
 def check_complexity(ctx: Context) -> CheckResult:
@@ -248,7 +248,7 @@ def _callable_hint(metric: str) -> str:
 @check(
     id=_CAPABILITIES,
     title="external dependencies are injected, not reached for",
-    tier=Tier.FAST,
+    stage=Stage.FAST,
     tier1=True,
     falsified_by="tests/negative/test_structure_gate.py::test_ambient_clock_in_pure_is_red",
 )

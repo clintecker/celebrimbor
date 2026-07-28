@@ -4,6 +4,36 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-07-27
+
+Nomenclature: "tier" meant two different things. Now it means one.
+
+The word described both *what kind* of check something is (Tier 0 commodity
+ladder vs Tier 1 obligation engine) **and** *how deep a run goes*
+(fast/default/full) — and both used numbers, so "tier 1" was ambiguous. The
+run-depth axis is now **stage**; **tier** refers only to the gate family.
+
+### Changed (breaking)
+
+- The execution axis is renamed `Tier` → `Stage` throughout the public API:
+  - `celebrimbor.Tier` → `celebrimbor.Stage` (values `FAST`/`DEFAULT`/`FULL`
+    unchanged)
+  - `celebrimbor.gate(tier=...)` → `celebrimbor.gate(stage=...)`
+  - `@celebrimbor.check(tier=...)` → `@celebrimbor.check(stage=...)`
+  - `ctx.tier` → `ctx.stage`, `report.tier` → `report.stage`,
+    `Registry.for_tier` → `Registry.for_stage`
+
+  The `--fast` / `--full` CLI flags, the `tier1: bool` check attribute, and the
+  `[tier0]` install extra are unchanged — those correctly refer to the tier
+  (gate-family) axis, which keeps the name.
+
+### Documentation
+
+- The gate overview page is rewritten as **Stages and tiers**, opening with an
+  explicit two-axis table so the distinction is stated once, up front.
+- Tier 0 is now called "the commodity ladder" consistently (it had drifted
+  between "the wedge" and "the ladder").
+
 ## [0.4.0] — 2026-07-27
 
 celebrimbor now gates itself. The full Tier 1 obligation engine runs against

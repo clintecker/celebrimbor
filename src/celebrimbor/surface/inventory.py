@@ -114,7 +114,7 @@ class ModuleInfo:
     tree: ast.Module | None = field(default=None, compare=False, repr=False)
     """The parsed tree, retained so downstream engines (complexity, the
     capability gate) do not re-parse the whole source tree. Parsing is the
-    dominant cost of the fast tier, and doing it three times would spend the
+    dominant cost of the fast stage, and doing it three times would spend the
     entire ~10s budget on redundant work. Excluded from equality so two
     inventories compare on their findings, not their node identities."""
 

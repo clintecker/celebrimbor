@@ -63,7 +63,7 @@ PYTEST = """
 testpaths = ["tests"]
 markers = [
   "negative: a fixture that must turn a specific gate red",
-  "slow: excluded from the fast tier",
+  "slow: excluded from the fast stage",
 ]
 # A warning that is not an error is a warning nobody reads.
 filterwarnings = ["error"]

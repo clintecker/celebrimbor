@@ -11,7 +11,7 @@ import pytest
 
 from celebrimbor.context import Context
 from celebrimbor.registry import Registry, check
-from celebrimbor.result import CheckResult, GateReport, Tier, Verdict
+from celebrimbor.result import CheckResult, GateReport, Stage, Verdict
 from celebrimbor.runner import escaped, expected_ids, run, run_spec, strays
 from tests.conftest import Project
 
@@ -31,7 +31,7 @@ def _registry_of(*ids: str) -> Registry:
         check(
             id=check_id,
             title=f"title for {check_id}",
-            tier=Tier.FAST,
+            stage=Stage.FAST,
             falsified_by="tests/negative/test_runner_completeness.py",
             registry=registry,
         )(_passing(check_id))
@@ -71,7 +71,7 @@ def test_raising_check_refuses_rather_than_crashing(project: Project) -> None:
     check(
         id="a.boom",
         title="a check that raises",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by="tests/negative/test_runner_completeness.py",
         registry=registry,
     )(explodes)
@@ -88,7 +88,7 @@ def test_check_returning_none_refuses(project: Project) -> None:
     check(
         id="a.none",
         title="a check that returns nothing",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by="tests/negative/test_runner_completeness.py",
         registry=registry,
     )(lambda _ctx: None)  # type: ignore[arg-type,return-value]
@@ -103,7 +103,7 @@ def test_misfiled_result_refuses(project: Project) -> None:
     check(
         id="a.real",
         title="a check that files under the wrong name",
-        tier=Tier.FAST,
+        stage=Stage.FAST,
         falsified_by="tests/negative/test_runner_completeness.py",
         registry=registry,
     )(lambda _ctx: CheckResult.passed("a.other", "fine"))
@@ -130,18 +130,18 @@ def test_empty_report_is_red_not_green(project: Project) -> None:
 def test_tier_filtering_is_the_only_definition_of_a_complete_run() -> None:
     """`expected_ids` is the single source of truth the meta-check compares to."""
     registry = Registry()
-    for check_id, tier in (("a.fast", Tier.FAST), ("a.def", Tier.DEFAULT), ("a.full", Tier.FULL)):
+    for check_id, stage in (("a.fast", Stage.FAST), ("a.def", Stage.DEFAULT), ("a.full", Stage.FULL)):
         check(
             id=check_id,
             title=check_id,
-            tier=tier,
+            stage=stage,
             falsified_by="tests/negative/test_runner_completeness.py",
             registry=registry,
         )(_passing(check_id))
 
-    assert expected_ids(registry, Tier.FAST) == {"a.fast"}
-    assert expected_ids(registry, Tier.DEFAULT) == {"a.fast", "a.def"}
-    assert expected_ids(registry, Tier.FULL) == {"a.fast", "a.def", "a.full"}
+    assert expected_ids(registry, Stage.FAST) == {"a.fast"}
+    assert expected_ids(registry, Stage.DEFAULT) == {"a.fast", "a.def"}
+    assert expected_ids(registry, Stage.FULL) == {"a.fast", "a.def", "a.full"}
 
 
 def test_disabled_check_is_skipped_visibly_not_silently(project: Project) -> None:
@@ -172,7 +172,7 @@ def test_disabled_check_is_skipped_visibly_not_silently(project: Project) -> Non
 
 def test_report_of_only_skips_is_not_a_pass(project: Project) -> None:
     """Skips are ok but never proved; a run of nothing but skips proved nothing."""
-    report = GateReport(tier=Tier.FAST)
+    report = GateReport(stage=Stage.FAST)
     report.add(CheckResult.skipped("a.one", "not opted in"))
     assert report.ok, "a skip does not redden the gate"
     assert not any(r.proved for r in report), "but nothing was established either"

@@ -66,16 +66,17 @@ contradicting.
 
 ---
 
-## Two tiers, nineteen gates
+## Two tiers, twenty gates
 
 <div class="grid cards" markdown>
 
--   **Tier 0 — the wedge**
+-   **Tier 0 — the commodity ladder**
 
     ---
 
     Lint, types, format, complexity, cohesion, known-bad, marker grammar. Wired
-    with opinionated defaults, green on a fresh repo in under ten minutes.
+    with opinionated defaults, green on a fresh repo in under ten minutes — the
+    adoption wedge.
 
     ```bash
     celebrimbor gate --fast
@@ -99,7 +100,7 @@ Every gate carries a negative fixture proving it can turn red — a gate that ha
 never been observed to fail is a blind gate, and celebrimbor does not ship them,
 including its own.
 
-[The gate, tier by tier →](gate/tiers.md)
+[The gate: stages & tiers →](gate/stages-and-tiers.md)
 
 ---
 

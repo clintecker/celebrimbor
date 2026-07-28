@@ -14,7 +14,7 @@ from celebrimbor.config import Config
 from celebrimbor.context import Context
 from celebrimbor.ratchets.baseline import BaselineEnvironmentError
 from celebrimbor.ratchets.structure import Breach, StructureBaseline, ratchet, rebaseline
-from celebrimbor.result import Tier, Verdict
+from celebrimbor.result import Stage, Verdict
 from celebrimbor.runner import run_spec
 from tests.conftest import Project
 
@@ -102,7 +102,7 @@ def _tangled(project: Project, module: str, name: str) -> None:
 
 def _gate(project: Project, **ctx_kwargs) -> object:  # noqa: ANN003
     cfg = Config.load(project.root).with_overrides(pinned_environment=True)
-    ctx = Context(config=cfg, tier=Tier.DEFAULT, **ctx_kwargs)
+    ctx = Context(config=cfg, stage=Stage.DEFAULT, **ctx_kwargs)
     return run_spec(project.spec(_COMPLEXITY), ctx)
 
 
@@ -134,7 +134,7 @@ def test_update_on_dev_box_refuses(project: Project) -> None:
     """A dev box cannot bake in a baseline that differs from CI's."""
     _tangled(project, "app.legacy", "old_mess")
     cfg = Config.load(project.root).with_overrides(pinned_environment=False)
-    ctx = Context(config=cfg, tier=Tier.DEFAULT, update_baselines=True, update_reason="x")
+    ctx = Context(config=cfg, stage=Stage.DEFAULT, update_baselines=True, update_reason="x")
     result = run_spec(project.spec(_COMPLEXITY), ctx)
     assert result.verdict is Verdict.REFUSED
     assert "dev box" in (result.reason or "") or "pinned" in (result.reason or "")
