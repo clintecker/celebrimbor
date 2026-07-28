@@ -25,4 +25,14 @@ jobs:
         # CI sets CI=1, so this is the pinned environment: ratchets baseline
         # on the first run and enforce thereafter, and a missing tool is a
         # hard failure rather than a skip.
-        run: celebrimbor gate
+        #
+        # The impact gate diffs a *proposed change*, so it wants the pull
+        # request's merge base. On a direct push to main there is no proposal to
+        # re-litigate — the PR already gated it — so we diff against HEAD (an
+        # empty diff, impact passes) while every other Tier 1 gate still runs.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            celebrimbor gate --diff-base "origin/${{ github.base_ref }}"
+          else
+            celebrimbor gate --diff-base HEAD
+          fi
