@@ -49,6 +49,20 @@ That question is unanswered by the entire commodity ladder, and it is precisely
 the question that matters for code you did not write by hand — code from an AI,
 or from six months ago, or from someone else.
 
+```mermaid
+flowchart TD
+    A["linters — is it styled correctly?"]
+    B["type checkers — do the shapes match?"]
+    C["tests — do the cases I wrote pass?"]
+    D["<b>celebrimbor — is it what it claims to be?</b>"]
+    A --> B --> C --> D
+    D -.->|"the gap every other layer leaves open"| X(["where plausible-but-wrong lives"])
+    classDef me fill:#4a235a,stroke:#7d3c98,color:#fff
+    class D me
+```
+
+Each layer answers a real question; none of them answers the last one.
+
 ## What celebrimbor does about each one
 
 Celebrimbor assigns every callable a **role** — a claim about what proof it owes

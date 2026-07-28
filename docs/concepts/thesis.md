@@ -14,18 +14,28 @@ serves them.
 
 ## Self-falsifying claims
 
-A unit that asserts a property must be forced to prove it. This shows up
-everywhere:
+A unit that asserts a property must be forced to prove it. This is not a slogan
+— it is a required argument. The `@check` decorator has no default for
+`falsified_by`; you cannot register a gate without naming how it can fail:
 
-- A `@check` cannot be registered without a `falsified_by` — a negative fixture
-  proving the check can turn red. There is no default; the keyword is required.
+```python
+@celebrimbor.check(
+    id="myapp.manifest",
+    title="every artifact is listed",
+    falsified_by="tests/known-bad/manifest_missing.json",  # ← not optional
+)
+def check_manifest(ctx): ...
+```
+
+The same shape recurs:
+
 - A `producer` must name a `verifier`, and that verifier must name a negative
   fixture that turns it red. You cannot inherit a verifier that inspects nothing.
-- A declared role is checked against the code (the [evidence gate](../gate/surface.md)),
+- A declared role is checked against the code (the [evidence gate](../gate/surface.md#evidence)),
   so a `verifier` that can never fail is refused.
 
 The pattern is fractal: the same discipline the harness applies to your code, it
-applies to its own gates, and to the gates on those gates.
+applies to its own gates, and to [the gates on those gates](../gate/meta.md).
 
 ## Fail closed
 
@@ -46,13 +56,30 @@ Prefer making an illegal state *unrepresentable* over checking for it after the
 fact. The clearest example: there is no "unclassified" role. An earlier design
 had one, and it was deleted — because a role that means "I don't know" could be
 ratified, and every gate keying on role would then read a real, ratified,
-meaningless value. Inference abstains by producing *nothing*; an unclassifiable
-module simply gets no row, and the completeness audit reddens the gap. The
-illegal state cannot be written down.
+meaningless value. `Role.parse` now *raises* on anything outside the eight; the
+illegal value cannot be constructed, let alone ratified. Inference abstains by
+producing *nothing*; an unclassifiable module simply gets no row, and the
+completeness audit reddens the gap.
 
 ## The compass
 
-When a design decision is unclear, these three resolve it. Does the change make a
-claim more falsifiable? Does it fail closed? Does it move a check toward an
-invariant? If a proposed feature would let a unit assert something it cannot be
-forced to prove, it is the wrong feature — no matter how convenient.
+When a design decision is unclear, three questions resolve it — and a "no" to any
+is a "no" to the feature:
+
+```mermaid
+flowchart TD
+    F["a proposed feature"] --> Q1{makes a claim<br/>more falsifiable?}
+    Q1 -->|no| REJ([reject])
+    Q1 -->|yes| Q2{fails closed<br/>when unsure?}
+    Q2 -->|no| REJ
+    Q2 -->|yes| Q3{moves a check<br/>toward an invariant?}
+    Q3 -->|no| REJ
+    Q3 -->|yes| KEEP([keep])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class REJ red
+    class KEEP green
+```
+
+If a proposed feature would let a unit assert something it cannot be forced to
+prove, it is the wrong feature — no matter how convenient.

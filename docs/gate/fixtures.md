@@ -65,22 +65,39 @@ When on, it reports two things the AST cannot see:
   importing, so it both detects the effect and *prevents* it: a module that
   would write a file on import does not actually write one during the check.
 
-```toml
-[tool.celebrimbor]
-import_check = true
+```mermaid
+sequenceDiagram
+    participant G as imports gate
+    participant S as subprocess (isolated)
+    participant M as your module
+    G->>S: spawn, install guards
+    Note over S: patch open-for-write, socket,<br/>subprocess → inert + flag
+    S->>M: import
+    alt imports cleanly
+        M-->>S: ok — any side effect caught & prevented
+    else raises
+        M-->>S: import error captured
+    end
+    S-->>G: JSON { errors, effects }
 ```
+
+It is *opt-in within the obligation family*: unlike the ledger-keyed obligation
+gates, which skip until you author their ledger, this one skips until you flip
+`import_check = true` — because importing your code is a choice only you can make.
 
 ## Utilities
 
-Two supporting utilities ship in the package for your own tests to import (they
-are not gates):
+Supporting utilities ship in the package for your own tests to import (they are
+not gates):
 
 - **`celebrimbor.scenarios.pairwise`** — deterministic all-pairs scenario
   generation. Most interaction bugs are triggered by two values; pairwise covers
   every value-pair across all parameters in a fraction of the cases. It is
   deterministic (no RNG) so a failing scenario is reproducible and a committed
   baseline is meaningful, and `uncovered_pairs()` lets you *prove* completeness.
+  `cartesian()` is there too when you genuinely need the full product.
 - **`celebrimbor.differ`** — a toolchain-stable snapshot differ with a
   reason-gated update and a `self_proof()` that mutates a baseline in memory to
-  confirm the differ actually detects a change. A differ never shown to detect a
-  change is a blind differ.
+  confirm the differ actually detects a change (a differ never shown to detect a
+  change is a blind differ). Its `Normalizer` masks volatile tokens — timestamps,
+  temp paths, addresses — so a snapshot compares on what matters, not on noise.

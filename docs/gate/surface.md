@@ -23,6 +23,25 @@ reddens on drift in either direction:
   is gone;
 - an exemption past its review date.
 
+```mermaid
+flowchart LR
+    A["AST inventory<br/>every public callable<br/><em>(ground truth)</em>"] --> C{compare}
+    M["surface map<br/>your ratified claims"] --> C
+    C -->|"in code, no row"| H([hole · red])
+    C -->|"row still inferred"| U([un-ratified · red])
+    C -->|"row for gone module"| P([phantom · red])
+    C -->|"exemption expired"| X([stale waiver · red])
+    C -->|"match · ratified · live"| G([green])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class H,U,P,X red
+    class G green
+```
+
+Completeness is set-equality between what the code *is* and what the map
+*claims*, and any of the four drifts fails it. This is why the count can never
+quietly fall behind the code.
+
 !!! important "AST-only, never imported"
     The inventory is built with `ast.parse`, never `import`. A module that raises
     on import produces *no* callables, and a completeness count built by

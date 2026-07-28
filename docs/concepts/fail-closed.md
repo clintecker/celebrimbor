@@ -8,12 +8,12 @@ enforced in one place — the result vocabulary — so no engine can forget it.
 
 A check does not return a boolean. It returns a verdict:
 
-| Verdict | Meaning | Red? |
-|---|---|---|
-| `pass` | the claim was checked and held | no |
-| `fail` | the claim was checked and violated — a finding is attached | **yes** |
-| `refused` | the claim could **not** be checked | **yes** |
-| `skipped` | the check does not apply here — carries a reason | no |
+| Verdict | Glyph | Meaning | Red? |
+|---|:--:|---|---|
+| `pass` | `✓` | the claim was checked and held | no |
+| `fail` | `✗` | the claim was checked and violated — a finding is attached | **yes** |
+| `refused` | `⊘` | the claim could **not** be checked | **yes** |
+| `skipped` | `–` | the check does not apply here — carries a reason | no |
 
 The split between `fail` and `refused` is load-bearing. `fail` means the harness
 proved a violation and can point at it. `refused` means it could not reach a
@@ -90,8 +90,20 @@ handling depends on whether a promise was made:
   contributor who has not installed mypy is not blocked from committing by a gate
   CI will run properly anyway.
 
-The asymmetry is the point: the place where the answer matters is the place that
-fails closed.
+```mermaid
+flowchart TD
+    T{tool missing?} -->|no| RUN([run it])
+    T -->|yes| E{"trusted env?<br/>(CI · CELEBRIMBOR_TRUSTED=1)"}
+    E -->|"yes — toolchain was promised"| R([refused — red])
+    E -->|"no — a dev box"| S([skipped, with reason])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class R red
+    class S,RUN green
+```
+
+The asymmetry is the point: the place where the answer matters — CI, where a
+green is a promise to everyone else — is the place that fails closed.
 
 ## Every gate is proven to fail
 

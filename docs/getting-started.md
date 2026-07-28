@@ -24,6 +24,14 @@ coverage), a `.pre-commit-config.yaml` whose one hook is `celebrimbor gate
 --fast`, and a `tests/known-bad/` directory. It **never overwrites** a config
 section you already have — re-running it only appends what is missing.
 
+```text
+your-project/
+├── pyproject.toml            # + [tool.ruff] [tool.mypy] [tool.pytest] [tool.celebrimbor]
+├── .pre-commit-config.yaml   # one hook: celebrimbor gate --fast
+└── tests/
+    └── known-bad/            # deliberately-wrong fixtures prove your checkers bite
+```
+
 ## Run the gate
 
 ```bash

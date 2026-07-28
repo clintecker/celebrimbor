@@ -25,6 +25,20 @@ capability was handed in — a test can substitute a different one, so the behav
 is reachable. If the root is a module-level import or a bare builtin like
 `open()`, the capability was *reached for*. There is no seam.
 
+```mermaid
+flowchart TD
+    C["a call — walk the<br/>attribute chain to its root"] --> Q{the root is…}
+    Q -->|"a parameter · self · cls ·<br/>a local bound from one"| INJ(["injected — a test<br/>can substitute it"])
+    Q -->|"a module import · a builtin"| RC["reached for a capability"]
+    RC --> B{"the role's budget<br/>allows this capability?"}
+    B -->|yes| OK(["allowed<br/>(e.g. an adapter)"])
+    B -->|no| RED(["red — un-injected<br/>in a role that forbids it"])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class RED red
+    class INJ,OK green
+```
+
 ## Budgeted by role
 
 A capability is not universally forbidden — it has to live *somewhere*, or the

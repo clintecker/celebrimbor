@@ -32,6 +32,22 @@ The gate checks the verifier resolves to a real callable *classified as a
 verifier*, and the fixture exists. A producer with no entry can sit in `pending`
 — but visibly, with a review date, on an allowlist that expires.
 
+```mermaid
+flowchart TD
+    P["a producer<br/>(makes an artifact)"] --> Q{named in the<br/>ledger?}
+    Q -->|"no · not pending"| R1([red])
+    Q -->|"pending (dated)"| OK1([allowed — for now])
+    Q -->|yes| V{verifier resolves<br/>AND is classified<br/>a verifier?}
+    V -->|no| R2([red])
+    V -->|yes| F{negative fixture<br/>exists?}
+    F -->|no| R3([red])
+    F -->|yes| G([proved])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class R1,R2,R3 red
+    class G,OK1 green
+```
+
 !!! note "Override granularity"
     The producers it demands entries for come from the module default *plus*
     per-callable overrides — so a `producer` introduced by a single override on
@@ -59,28 +75,44 @@ invariants:
 Every named `enforced_by` must resolve to a real callable, and every `critical`
 invariant must keep a real `negative_proof`. A promise whose enforcer has been
 renamed or deleted turns the gate red — a promise nobody enforces is not a
-promise. The ledger also renders to human docs that cannot lie, because the gate
-has already checked every line against the code.
+promise.
 
 This is the producer ledger generalized: a producer ledger is an invariant
 ledger specialized to "the artifact is correct."
 
-## Impact
+!!! tip "Docs that cannot lie"
+    The invariant ledger renders to human-readable markdown — a living list of
+    the promises your system makes. It cannot drift into fiction, because the
+    gate has already checked every line of it against the code. Documentation
+    validated by a gate is the only documentation that stays true.
+
+## The impact gate
 
 `celebrimbor.impact` reads the invariant ledger *differentially*, against a git
 diff. It asks a question about *change*: when you modify a module that decides or
 attests something — a verifier, producer, parser, normalizer, or adapter — is
 there a recorded promise governing it?
 
-```
-git diff  →  the role of each changed module  →  the invariant that owns it  →  a gap
+```mermaid
+flowchart LR
+    D["git diff<br/>vs the base"] --> M{"each changed<br/>module's role"}
+    M -->|"pure / presenter"| OK([no obligation])
+    M -->|"policy-bearing"| I{"named by an<br/>invariant?"}
+    I -->|yes| OK
+    I -->|no| RED(["red — a guarantee<br/>changed unwatched"])
+    D -.->|"diff unknowable"| REF([refused — red])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class RED,REF red
+    class OK green
 ```
 
-A changed policy-role module with no invariant naming it as an enforcer is the
-gap, and it reddens. The policy roles are `parser`, `normalizer`, `verifier`,
-`producer`, `adapter`, and `orchestrator` by default; set `policy_roles` in
-config to match an existing harness's set. This surfaces the silent alteration of a guarantee, made in
-a place with no invariant watching it.
+A changed [policy-role](../concepts/roles.md#policy-roles-and-the-impact-gate)
+module with no invariant naming it as an enforcer is the gap, and it reddens.
+The policy roles are `parser`, `normalizer`, `verifier`, `producer`, `adapter`,
+and `orchestrator` by default; set `policy_roles` in config to match an existing
+harness's set. This surfaces the silent alteration of a guarantee, made in a
+place with no invariant watching it.
 
 !!! important "Fail closed on an unknowable diff"
     If the changed-file set cannot be determined — not a repo, git absent, an

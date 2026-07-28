@@ -6,7 +6,24 @@ the config is optional. If you need config to get started, the conventions are
 wrong, and that is a bug to report, not a knob to turn.
 
 Settings live under `[tool.celebrimbor]` in `pyproject.toml`, or in a dedicated
-`celebrimbor.toml` (which takes precedence).
+`celebrimbor.toml` (which takes precedence). Resolution is explicit, and a
+malformed file never falls back to defaults:
+
+```mermaid
+flowchart TD
+    A{"celebrimbor.toml<br/>exists?"} -->|yes| B{"parses?"}
+    A -->|no| C{"[tool.celebrimbor]<br/>in pyproject?"}
+    B -->|yes| USE([use it])
+    B -->|no| REF([refused — red])
+    C -->|yes| D{"parses?"}
+    C -->|no| CONV([convention defaults])
+    D -->|yes| USE
+    D -->|no| REF
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class REF red
+    class USE,CONV green
+```
 
 ## Layout
 

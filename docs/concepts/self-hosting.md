@@ -44,6 +44,16 @@ entire map. celebrimbor pointed at itself hit exactly this: one of 49 modules
 pinned to an all-digit hash, and the whole obligation engine went dark with a
 fail-closed refusal.
 
+```mermaid
+flowchart LR
+    A["pin = all-digit<br/>blake2s hex<br/>e.g. 775376418253"] --> B["written to YAML<br/><em>unquoted</em>"]
+    B --> C["read back<br/>as an <b>int</b>"]
+    C --> D["loader demands<br/>a string"]
+    D --> E(["whole map REFUSED<br/>— all of Tier 1 dark"])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    class E red
+```
+
 That is the gate working — it refused rather than guessing — but it was still a
 bug. The fix quotes pins on write and coerces the legacy form on read, and it
 ships with [its own falsifier](../gate/fixtures.md): a round-trip test that

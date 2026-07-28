@@ -147,7 +147,23 @@ Everything the existing check does keeps working; only the wrapper is new.
 
 ## Returning a good result
 
-Use the constructors — they encode which fields each verdict requires:
+Use the constructors — they encode which fields each verdict requires. Which one
+you reach for is a short decision:
+
+```mermaid
+flowchart TD
+    S["your check ran"] --> A{could you<br/>evaluate it?}
+    A -->|"no — missing input,<br/>tool, or data"| REF["refused(id, summary, reason)"]
+    A -->|yes| B{does it apply<br/>here at all?}
+    B -->|"no"| SK["skipped(id, reason)"]
+    B -->|yes| C{did the<br/>claim hold?}
+    C -->|yes| P["passed(id, summary)"]
+    C -->|no| F["failed(id, summary, findings)"]
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class REF,F red
+    class P,SK green
+```
 
 | Constructor | Use when |
 |---|---|
