@@ -4,6 +4,36 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-07-27
+
+Evidence-check accuracy — three blind spots that forced honest roles to be
+exempted during real adoption (issue #6).
+
+### Fixed
+
+- **I/O through a variable receiver is now traced.** `path.read_bytes()`,
+  `entry.is_file()`, `d.glob(...)` — inside a comprehension or loop, on a local
+  or injected receiver — were missed because the capability patterns keyed on the
+  literal `Path`. The scanner now also keys on distinctive method leaves.
+- **Seam-delegation counts as adapting.** A wrapper whose one syscall lives one
+  module deeper — a call into an adapter-classified module, an I/O-verb method
+  (`transport.get`, `client.post_json`, `runner.run`), or a private same-module
+  helper that itself does I/O — no longer reads as "adapts nothing".
+- **Stateful in-memory fakes may be adapters.** A test-double that mutates its
+  own state and touches no ambient capability *is* the injected backend, so it
+  satisfies `adapter` rather than fitting no role.
+
+The escape these guard stays closed: a genuinely inert function (pure value
+computation) declared `adapter` is still contradicted. Against a real 86-module
+codebase these cut adapter false-positives from 18 to 6 — the remainder genuine
+misclassifications the sharper check now surfaces.
+
+### Changed
+
+- The ratification pin scheme is bumped (it now includes state-mutation and I/O
+  character), so existing ratified rows re-open once and must be re-ratified with
+  `celebrimbor ratify`. This affects only projects with a committed surface map.
+
 ## [0.3.0] — 2026-07-27
 
 ### Added
@@ -95,6 +125,7 @@ falsifier and the gate fail closed.
   configurable ledger paths for adopters with an existing layout.
 - 129 tests, including a negative fixture for every gate.
 
+[0.3.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.3.1
 [0.3.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.3.0
 [0.2.1]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.1
 [0.2.0]: https://github.com/clintecker/celebrimbor/releases/tag/v0.2.0

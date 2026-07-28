@@ -51,6 +51,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..roles import Role
+from ._method_names import IO_METHODS, MUTATING_METHODS, VALUE_METHODS
 from .capabilities import Capability, root_of, scan_callable
 
 if TYPE_CHECKING:
@@ -68,6 +69,23 @@ class RoleFacts:
     Such a callable has no failing path at all."""
 
     mutates_params: bool
+    mutates_self: bool
+    """Writes to ``self``/``cls`` attributes or items. A stateful in-memory
+    test-double (a fake backend) mutates its own state and touches no ambient
+    capability — it is neither ``pure`` nor a real-capability ``adapter``, but it
+    *is* the injected backend, so this fact lets it satisfy the ``adapter`` role."""
+
+    delegates_to_adapter: bool
+    """Calls a name that resolves to an adapter-classified module. A seam-wrapper
+    that delegates its one I/O op to a capability module (``adapters.post(...)``)
+    is doing adapter work even though the syscall lives one module deeper."""
+
+    performs_io_call: bool
+    """Calls an I/O-verb method (``.run``, ``.get``, ``.execute``, ...) on any
+    receiver. Catches backend interaction the capability patterns miss — a call
+    into an unclassified seam, or an injected transport — and satisfies the
+    ``adapter`` role without the escape it would open for other roles."""
+
     ambient: frozenset[Capability]
     injected_calls: int
     collaborators: frozenset[str]
@@ -130,83 +148,29 @@ def _return_values(node: ast.AST) -> list[ast.expr | None]:
     return [c.value for c in ast.walk(node) if isinstance(c, ast.Return)]
 
 
-def _mutates(node: ast.AST, params: frozenset[str]) -> bool:
-    """Does the body write through one of its own parameters?"""
-    return any(
-        isinstance(c, ast.Attribute | ast.Subscript)
-        and isinstance(c.ctx, ast.Store)
-        and _root_name(c) in params
-        for c in ast.walk(node)
+def _stores_to(c: ast.AST, roots: frozenset[str]) -> bool:
+    """A `self.x = ...` / `self.x[i] = ...` / `self.x += ...` rooted at `roots`."""
+    target = c.target if isinstance(c, ast.AugAssign) else c
+    return (
+        isinstance(target, ast.Attribute | ast.Subscript)
+        and (isinstance(target.ctx, ast.Store) or isinstance(c, ast.AugAssign))
+        and _root_name(target) in roots
     )
 
 
-# Methods that operate on plain values rather than on a resource. Calling one
-# of these on a parameter is not evidence of a backend — `text.strip()` and
-# `db.execute()` are both "a call on something injected", and only the second
-# means anything. Without this stoplist the adapter condition would be
-# satisfied by any function that uses its own arguments, i.e. all of them,
-# making that gate dead while appearing to work.
-_VALUE_METHODS = frozenset(
-    {
-        "strip",
-        "lstrip",
-        "rstrip",
-        "upper",
-        "lower",
-        "title",
-        "capitalize",
-        "casefold",
-        "split",
-        "rsplit",
-        "splitlines",
-        "join",
-        "format",
-        "replace",
-        "startswith",
-        "endswith",
-        "encode",
-        "decode",
-        "partition",
-        "rpartition",
-        "removeprefix",
-        "removesuffix",
-        "zfill",
-        "ljust",
-        "rjust",
-        "count",
-        "index",
-        "find",
-        "get",
-        "items",
-        "keys",
-        "values",
-        "copy",
-        "append",
-        "extend",
-        "insert",
-        "pop",
-        "sort",
-        "reverse",
-        "update",
-        "add",
-        "discard",
-        "union",
-        "intersection",
-        "difference",
-        "isdigit",
-        "isalpha",
-        "isspace",
-        "isupper",
-        "islower",
-        "as_posix",
-        "is_dir",
-        "is_file",
-        "exists",
-        "with_suffix",
-        "relative_to",
-        "resolve",
-    }
-)
+def _mutating_call(c: ast.AST, roots: frozenset[str]) -> bool:
+    """A `self.x.append(...)`-style in-place mutation rooted at `roots`."""
+    return (
+        isinstance(c, ast.Call)
+        and isinstance(c.func, ast.Attribute)
+        and c.func.attr in MUTATING_METHODS
+        and _root_name(c.func) in roots
+    )
+
+
+def _mutates(node: ast.AST, roots: frozenset[str]) -> bool:
+    """Does the body mutate state through one of ``roots`` — by store or in place?"""
+    return any(_stores_to(c, roots) or _mutating_call(c, roots) for c in ast.walk(node))
 
 
 def _method_name(func: ast.expr) -> str | None:
@@ -227,21 +191,54 @@ def _call_shape(node: ast.AST, params: frozenset[str]) -> tuple[int, frozenset[s
         root = _root_name(child.func)
         if root is None:
             continue
-        if root in params and _method_name(child.func) not in _VALUE_METHODS:
+        if root in params and _method_name(child.func) not in VALUE_METHODS:
             injected += 1
         collaborators.add(root)
     return injected, frozenset(collaborators)
+
+
+def _delegates(node: ast.AST, adapter_symbols: frozenset[str]) -> bool:
+    """Does the body call a name that resolves to an adapter-classified module?"""
+    if not adapter_symbols:
+        return False
+    return any(
+        isinstance(c, ast.Call) and _root_name(c.func) in adapter_symbols for c in ast.walk(node)
+    )
+
+
+def _is_io_method(name: str) -> bool:
+    """`post`, or a compound like `post_json` / `run_capture` / `get_bytes`.
+
+    Prefix matching on the leading verb catches the common `<verb>_<noun>`
+    naming (``client.post_json(...)``) without matching an unrelated name that
+    merely starts with the letters (``getter`` has no ``_``, so it never splits
+    to ``get``)."""
+    return name in IO_METHODS or (name.split("_", 1)[0] in IO_METHODS and "_" in name)
+
+
+def performs_io(node: ast.AST) -> bool:
+    """Does the body call an I/O-verb method (`.run`, `.post_json`, `.execute`)?"""
+    return any(
+        isinstance(c, ast.Call) and isinstance(c.func, ast.Attribute) and _is_io_method(c.func.attr)
+        for c in ast.walk(node)
+    )
 
 
 def gather(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     info: CallableInfo,
     complexity: int,
+    adapter_symbols: frozenset[str] = frozenset(),
 ) -> RoleFacts:
     """Extract role-relevant structural facts from one callable.
 
-    Several separate passes over the same body rather than one branching walk.
-    A function body is small enough that the extra traversals are free, and the
+    ``adapter_symbols`` are the names, bound in this callable's module, that refer
+    to adapter-classified modules — supplied by the evidence gate, which has the
+    surface map. Empty when the caller has no map (e.g. the pin, which only needs
+    shape), and the delegation fact is then simply absent.
+
+    Several separate passes over the same body rather than one branching walk. A
+    function body is small enough that the extra traversals are free, and the
     single-walk version scored 15 on the complexity gate this module helps
     enforce — which was a fair verdict, not a technicality.
     """
@@ -257,6 +254,9 @@ def gather(
             bool(returns) and not raises and all(_truthy_literal(r) for r in returns)
         ),
         mutates_params=_mutates(node, params),
+        mutates_self=_mutates(node, frozenset({"self", "cls"})),
+        delegates_to_adapter=_delegates(node, adapter_symbols),
+        performs_io_call=performs_io(node),
         ambient=frozenset(use.capability for use in scan_callable(node, info)),
         injected_calls=injected_calls,
         collaborators=collaborators,
@@ -338,12 +338,26 @@ _CONDITIONS: tuple[Condition, ...] = (
         "path that rejects — raise, or return a value that encodes refusal — and the "
         "negative fixture that exercises it.",
     ),
+    # An adapter is a boundary. It genuinely adapts when it reaches a capability,
+    # calls something it was handed, delegates to an adapter-classified module (a
+    # seam-wrapper whose one syscall lives one module deeper), or holds its own
+    # mutable state (a stateful in-memory fake IS the injected backend). Only a
+    # callable that does *none* of these — inert, pure computation dressed as an
+    # adapter to obtain the unrestricted capability budget — is contradicted.
     Condition(
         Role.ADAPTER,
-        lambda f: not (f.ambient or f.injected_calls),
+        lambda f: (
+            not (
+                f.ambient
+                or f.injected_calls
+                or f.delegates_to_adapter
+                or f.performs_io_call
+                or f.mutates_self
+            )
+        ),
         _fixed(
-            "it touches no capability and calls nothing it was handed, so it is not "
-            "adapting anything"
+            "it touches no capability, calls nothing it was handed, delegates to no "
+            "adapter module, and holds no state — so it is not adapting anything"
         ),
         "`adapter` carries an unrestricted capability budget, so declaring it without "
         "a boundary to adapt silently disables the injection gate. Classify it as what "
@@ -412,12 +426,14 @@ def signature(facts: RoleFacts) -> str:
     many collaborators it has, and its complexity band.
     """
     parts = (
-        "1",  # scheme version; bump to invalidate every pin deliberately
+        "2",  # scheme version; bump to invalidate every pin deliberately
         "".join(sorted(c.value[0] for c in facts.ambient)) or "-",
         "R" if facts.raises else "-",
         "V" if facts.returns_value else "-",
         "T" if facts.all_returns_truthy else "-",
         "M" if facts.mutates_params else "-",
+        "S" if facts.mutates_self else "-",
+        "I" if facts.performs_io_call else "-",
         "E" if facts.effectful else "-",
         str(_band(len(facts.collaborators))),
         str(facts.complexity_band),

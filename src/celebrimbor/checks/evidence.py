@@ -18,17 +18,99 @@ stopped being right.
 
 from __future__ import annotations
 
+import ast
+
 from ..context import Context
 from ..registry import check
 from ..result import CheckResult, Finding, Tier
+from ..roles import Role
 from ..structure.complexity import cyclomatic
-from ..structure.evidence import contradictions, gather, module_signature, signature
+from ..structure.evidence import (
+    contradictions,
+    gather,
+    module_signature,
+    performs_io,
+    signature,
+)
 from ..surface.inventory import Inventory, ModuleInfo, callable_nodes
 from ..surface.map import RATIFIED, SurfaceMap, SurfaceRow
 from ._shared import get_inventory, iter_ratified, require_surface_map
 
 _EVIDENCE = "celebrimbor.surface.evidence"
 _PIN = "celebrimbor.surface.pin"
+
+
+def _adapter_modules(smap: SurfaceMap) -> set[str]:
+    """Dotted names of modules whose effective role is `adapter`."""
+    return {m for m in smap.modules() if Role.ADAPTER in smap.effective_roles(m)}
+
+
+def _matches_adapter(target: str, adapter_modules: set[str]) -> bool:
+    """Does an imported module reference resolve to an adapter module?
+
+    Suffix-tolerant so an absolute ``from press.adapters import x`` matches the
+    surface-map's source-relative ``adapters``, and vice versa. The surface map
+    strips the source prefix; import statements usually do not.
+    """
+    return any(
+        target == a or target.endswith(f".{a}") or a.endswith(f".{target}") for a in adapter_modules
+    )
+
+
+def _plain_import_symbols(node: ast.Import, adapter_modules: set[str]) -> set[str]:
+    """`import adapters` / `import adapters as a` → the bound root name."""
+    return {
+        alias.asname or alias.name.split(".", 1)[0]
+        for alias in node.names
+        if _matches_adapter(alias.name, adapter_modules)
+    }
+
+
+def _from_import_symbols(node: ast.ImportFrom, adapter_modules: set[str]) -> set[str]:
+    """`from adapters import post` → the bound name; `from . import adapters` too."""
+    source = node.module or ""
+    return {
+        alias.asname or alias.name
+        for alias in node.names
+        # The source is the adapter module, or the alias itself is (bare `from .`).
+        if _matches_adapter(source, adapter_modules)
+        or _matches_adapter(alias.name, adapter_modules)
+    }
+
+
+def _io_helper_names(module: ModuleInfo) -> set[str]:
+    """Same-module functions that themselves perform I/O.
+
+    A callable that delegates to a private helper which does the syscall
+    (``lookup(t) -> _fetch(t, ...)`` where ``_fetch`` calls ``t.get(...)``) is
+    adapting through that helper. One level, same module, no recursion — enough
+    for the common "extract the request into a private function" pattern without
+    turning the evidence gate into a whole-program analysis.
+    """
+    if module.tree is None:
+        return set()
+    return {
+        node.name
+        for node in module.tree.body
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and performs_io(node)
+    }
+
+
+def _adapter_symbols(module: ModuleInfo, adapter_modules: set[str]) -> frozenset[str]:
+    """Names, bound in this module, a call to which counts as adapting.
+
+    Two sources: imports of an adapter-classified module (a seam-wrapper
+    delegating one module deeper), and same-module helpers that themselves do
+    I/O (a wrapper delegating to a private request function).
+    """
+    symbols: set[str] = _io_helper_names(module)
+    if module.tree is not None and adapter_modules:
+        for node in module.tree.body:
+            if isinstance(node, ast.Import):
+                symbols |= _plain_import_symbols(node, adapter_modules)
+            elif isinstance(node, ast.ImportFrom):
+                symbols |= _from_import_symbols(node, adapter_modules)
+    return frozenset(symbols)
 
 
 def compute_pin(module: ModuleInfo) -> str | None:
@@ -63,11 +145,21 @@ def check_role_evidence(ctx: Context) -> CheckResult:
     if isinstance(smap, CheckResult):
         return smap
 
+    adapter_modules = _adapter_modules(smap)
+    symbols_by_module: dict[str, frozenset[str]] = {}
+
     findings: list[Finding] = []
     examined = 0
     for entry in iter_ratified(ctx, smap):
         examined += 1
-        facts = gather(entry.node, entry.info, cyclomatic(entry.node))
+        if entry.module.dotted not in symbols_by_module:
+            symbols_by_module[entry.module.dotted] = _adapter_symbols(entry.module, adapter_modules)
+        facts = gather(
+            entry.node,
+            entry.info,
+            cyclomatic(entry.node),
+            adapter_symbols=symbols_by_module[entry.module.dotted],
+        )
         findings.extend(
             Finding(
                 message=(

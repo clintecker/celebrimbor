@@ -203,6 +203,28 @@ _AMBIENT_READS: dict[str, Capability] = {
     "sys.stdin": Capability.ENVIRONMENT,
 }
 
+# Method names distinctive enough to signal a capability *regardless of the
+# receiver*. `path.read_bytes()`, `p.glob("*")`, `entry.is_file()` all reach the
+# filesystem, but the receiver is a variable (`path`, `p`, `entry`), so the
+# dotted-pattern match — which keys on `Path.read_bytes` — never fires. Keying on
+# the method leaf catches I/O through a variable, including inside a comprehension
+# or loop body where the receiver is a bound loop variable. Kept to names that
+# are unambiguously capability operations, to avoid flagging an arbitrary object
+# that happens to have a `.read()`.
+_METHOD_CAPABILITIES: dict[str, Capability] = {
+    "read_bytes": Capability.FILESYSTEM,
+    "read_text": Capability.FILESYSTEM,
+    "write_bytes": Capability.FILESYSTEM,
+    "write_text": Capability.FILESYSTEM,
+    "glob": Capability.FILESYSTEM,
+    "rglob": Capability.FILESYSTEM,
+    "iterdir": Capability.FILESYSTEM,
+    "is_file": Capability.FILESYSTEM,
+    "is_dir": Capability.FILESYSTEM,
+    "hardlink_to": Capability.FILESYSTEM,
+    "symlink_to": Capability.FILESYSTEM,
+}
+
 
 # What each role is permitted to reach for. Everything absent is a violation.
 #
@@ -405,6 +427,11 @@ class _Scanner(ast.NodeVisitor):
         if _root(dotted) in self._seams():
             return
         capability = _BARE.get(dotted) if "." not in dotted else _match(dotted, _PATTERNS)
+        if capability is None and "." in dotted:
+            # Receiver is a variable (`path.read_bytes()`), so the dotted-pattern
+            # match on `Path.read_bytes` missed it. Fall back to the method leaf,
+            # which is distinctive enough to name the capability on its own.
+            capability = _METHOD_CAPABILITIES.get(dotted.rsplit(".", 1)[-1])
         if capability is not None:
             self._record(capability, dotted, lineno)
 
