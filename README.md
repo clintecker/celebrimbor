@@ -190,9 +190,25 @@ def check_manifest(ctx):
 ```
 
 `falsified_by` is required and has no default — the framework will not let you
-add a gate without saying how you know the gate works. Your checks run in the
-same ordered registry as the builtins, under the same guarantee that no check
-escapes the runner.
+add a gate without saying how you know the gate works. Point the CLI at your
+module and your checks run through `celebrimbor gate` itself, in the same ordered
+registry as the builtins, under the same no-check-escapes guarantee:
+
+```toml
+[tool.celebrimbor]
+check_modules = ["myapp.quality_checks"]        # your @check gates, run by the CLI
+
+[tool.celebrimbor.known_bad_checkers.style_audit]
+callable = "myapp.editorial:diagnostics_for"    # your own known-bad linter
+match = "substring"
+```
+
+That is the point of the seams added across 0.7–0.10: your domain checks, your
+fixture-provenance linter, and your invariants (which may keep several proofs and
+declare `limitations:` a suppressed test must cite) all run through **one** gate,
+so an existing quality harness folds into celebrimbor instead of living beside
+it. Anything that will not import or run is a hard, fail-closed error — never a
+silently smaller gate.
 
 ```python
 report = celebrimbor.gate(stage="fast")   # drive it programmatically

@@ -15,7 +15,7 @@ Run against celebrimbor's own `src/`:
 | Measure | Count |
 |---|---|
 | Modules classified | 57 |
-| Public callables accounted for | 242 |
+| Public callables accounted for | 244 |
 | Surface-map rows, ratified and pinned | 49 |
 | Producers proved through a real verifier | 14 |
 | Producers admitted `pending`, with a date | 1 |
@@ -24,7 +24,7 @@ Run against celebrimbor's own `src/`:
 | Gates green | 19 / 20 |
 | Gates skipped | 1 (coverage — its baseline is taken in CI) |
 
-Every one of the 242 callables carries a ratified role, and every role is
+Every one of the 244 callables carries a ratified role, and every role is
 pinned to the shape of the code it was ratified against. Change the character of
 any of them — make a parser open a socket, make a pure helper read the clock —
 and its row reverts to un-ratified and the gate goes red until a human looks
@@ -49,7 +49,7 @@ flowchart TD
     A["pin = all-digit<br/>blake2s hex<br/>e.g. 775376418253"] --> B["written to YAML<br/><em>unquoted</em>"]
     B --> C["read back<br/>as an <b>int</b>"]
     C --> D["loader demands<br/>a string"]
-    D --> E(["whole map REFUSED<br/>— all of Tier 1 dark"])
+    D --> E(["whole map REFUSED<br/>— every obligation gate dark"])
 ```
 
 That is the gate working — it refused rather than guessing — but it was still a

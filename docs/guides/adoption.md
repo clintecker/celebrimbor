@@ -114,25 +114,65 @@ celebrimbor gate --full   # + mutation
 
 ## Migrating from an existing inline harness
 
-If your project already has a hand-rolled quality harness (its own surface map,
-invariants, ratchets), the conversion is mechanical:
+If your project already has a hand-rolled quality harness — its own surface map,
+invariants, ratchets, domain checks, fixture auditor — the goal is to **run all
+of it through `celebrimbor gate`** and delete the parallel code. Every seam below
+exists so you keep your data and your tooling, and stop maintaining a second
+harness. Each is fail-closed: a thing that will not run is red, never a quiet
+pass.
 
-- **Keep your data where it lives.** `[tool.celebrimbor.paths]` points celebrimbor
-  at existing files — you do not have to reorganize your repo.
+**Keep your data where it lives.** `[tool.celebrimbor.paths]` points celebrimbor
+at existing files — no repo reorganisation:
 
-    ```toml
-    [tool.celebrimbor.paths]
-    surfaces = "quality/surfaces.yaml"
-    invariants = "quality/invariants.yaml"
-    producers = "quality/producers.yaml"
-    coverage_baseline = "quality/coverage-baseline.yaml"
-    mutation_baseline = "quality/mutation-baseline.yaml"
-    structure_baseline = "quality/structure-baseline.yaml"
-    ```
+```toml
+[tool.celebrimbor.paths]
+surfaces = "quality/surfaces.yaml"
+invariants = "quality/invariants.yaml"
+producers = "quality/producers.yaml"
+coverage_baseline = "quality/coverage-baseline.yaml"
+mutation_baseline = "quality/mutation-baseline.yaml"
+structure_baseline = "quality/structure-baseline.yaml"
+```
 
-- **Extra fields are tolerated.** celebrimbor's invariant loader ignores fields it
-  does not know (owner, risk, ticket links), so your annotations survive.
-- **Adapt your checks to the seam.** An existing zero-argument `check_foo()` that
-  raises on failure becomes a celebrimbor check with a thin wrapper — see
-  [Writing custom checks](custom-checks.md). They then run in the same registry
-  as the builtins, under the same completeness guarantee.
+Extra fields in your ledgers are tolerated — the loader ignores keys it does not
+know (owner, risk, ticket links), so your annotations survive.
+
+**Run your own checks through the CLI.** Any check you register with
+[`@celebrimbor.check`](custom-checks.md) runs through `celebrimbor gate` once you
+name its module — no bespoke entry point. A module that will not import is a hard
+error, so a check can never silently vanish:
+
+```toml
+[tool.celebrimbor]
+check_modules = ["myapp.quality_checks"]
+```
+
+An existing zero-argument `check_foo()` that raises on failure becomes a
+celebrimbor check with a thin wrapper (see [Writing custom checks](custom-checks.md#adapting-a-raise-on-failure-check));
+it then runs under the same completeness guarantee as the builtins.
+
+**Prove your own known-bad fixtures with your own linter.** If your fixtures are
+caught by a domain linter (not ruff/mypy), declare how to run it — as a
+subprocess or, for a checker with no clean per-file entry, in-process — and match
+by exact code or by substring for phrase-emitting linters. This retires a
+hand-rolled fixture-provenance auditor:
+
+```toml
+[tool.celebrimbor.known_bad_checkers.style_audit]
+callable = "myapp.editorial:diagnostics_for"   # or: command = "... {file}"
+match = "substring"
+```
+
+See [Fixtures & markers](../gate/fixtures.md#known-bad-provenance).
+
+**Bring over your invariants in full.** An invariant may keep **several**
+`negative_proof`s (each is checked) and declare `limitations:` — the cases it
+knowingly does not cover. Turn on
+[`markers_cite_limitations`](../gate/fixtures.md#citing-limitations) and a
+suppressed test must cite one of those limitations, so a known gap can't be
+confused with a shrug — retiring the limitation half of a hand-rolled marker
+grammar.
+
+The payoff: one `celebrimbor gate` command runs your domain checks, your fixture
+provenance, and your invariants alongside the builtins, all under the same
+fail-closed, no-check-escapes guarantee — and the second harness is deleted.

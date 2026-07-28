@@ -119,14 +119,20 @@ Every gate carries a negative fixture proving it can turn red — a gate that ha
 never been observed to fail is a blind gate, and celebrimbor does not ship them,
 including its own.
 
-[The gate: stages & families →](gate/stages-and-families.md)
+The twenty are not a ceiling. Your own `@check` gates, your own known-bad domain
+linters, and your own invariants run through the same `celebrimbor gate` command
+under the same fail-closed, no-check-escapes guarantee — so an existing quality
+harness folds *into* one gate instead of living beside it.
+
+[The gate: stages & families →](gate/stages-and-families.md) ·
+[Adopting an existing app →](guides/adoption.md)
 
 ---
 
 ## Proof it's real: celebrimbor gates itself
 
 celebrimbor runs its full obligation engine against its own source and ships
-green — 242 callables classified under 49 pinned rows, 14 producers proved
+green — 244 callables classified under 49 pinned rows, 14 producers proved
 through real verifiers, 8 critical invariants each with a negative proof, every
 module import-clean.
 Turning it on found a bug in the tool, forced a dependency-injection fix on its
