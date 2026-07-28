@@ -45,6 +45,7 @@ invariants = "quality/invariants.yaml"
 producers = "quality/producers.yaml"
 coverage_baseline = "quality/coverage-baseline.yaml"
 mutation_baseline = "quality/mutation-baseline.yaml"
+structure_baseline = "quality/structure-baseline.yaml"
 ```
 
 An unknown key here is an error, not ignored — a typo'd override would leave

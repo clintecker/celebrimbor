@@ -56,13 +56,32 @@ Every callable has a **role**, and a role names the *kind of proof it owes*.
 | `adapter` | a contract test against fake and real backends |
 | `presenter` | an integration or end-to-end run |
 
-The role is the spine. It decides what proof a callable owes, which capabilities
-it may reach for, whether a change to it needs a governing invariant, and — for
-producers — that it names a verifier proven to reject a bad artifact. Every gate
-reads the same ratified-then-pinned map, so they reinforce each other instead of
-contradicting.
+The role is the spine. One ratified-then-pinned classification decides
+everything downstream, so the gates reinforce each other instead of each seeing
+its own slice:
 
-[Roles & obligations →](concepts/roles.md)
+```mermaid
+flowchart TD
+    R["**role**<br/>(ratified &amp; pinned)"]
+    R --> P["proof it owes<br/>→ fixtures gate"]
+    R --> C["capability budget<br/>→ capabilities gate"]
+    R --> E["consistent with the code?<br/>→ evidence gate"]
+    R --> V["is it a producer?<br/>→ producers ledger"]
+    R --> I["is it policy-bearing?<br/>→ change-impact gate"]
+    R --> S["is it accounted for?<br/>→ completeness gate"]
+    P --> G(["one gate, fail-closed"])
+    C --> G
+    E --> G
+    V --> G
+    I --> G
+    S --> G
+```
+
+Because every gate reads the same source of truth, the capability gate can be
+trusted only because the evidence gate proved the role honest, and the impact
+gate is meaningful only because the surface map is provably complete.
+
+[Roles &amp; obligations →](concepts/roles.md)
 
 ---
 
@@ -106,9 +125,10 @@ including its own.
 
 ## Proof it's real: celebrimbor gates itself
 
-celebrimbor runs its full obligation engine against its own source and ships green — 242
-callables classified and pinned, 14 producers proved through real verifiers, 8
-critical invariants each with a negative proof, every module import-clean.
+celebrimbor runs its full obligation engine against its own source and ships
+green — 242 callables classified under 49 pinned rows, 14 producers proved
+through real verifiers, 8 critical invariants each with a negative proof, every
+module import-clean.
 Turning it on found a bug in the tool, forced a dependency-injection fix on its
 own runner, and left exactly one debt on a dated `pending` list rather than
 papering over it.

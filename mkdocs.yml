@@ -47,7 +47,13 @@ markdown_extensions:
   - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        # Render ```mermaid blocks as diagrams. Material bundles mermaid.js and
+        # themes it to the active palette, so diagrams follow light/dark mode.
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.inlinehilite
   - pymdownx.snippets:
       # resolve `--8<--` includes from the repo root, so docs/changelog.md can
@@ -65,6 +71,7 @@ nav:
   - Concepts:
       - Why celebrimbor: concepts/why.md
       - The thesis: concepts/thesis.md
+      - How it fits together: concepts/architecture.md
       - Roles & obligations: concepts/roles.md
       - Fail closed: concepts/fail-closed.md
       - celebrimbor on celebrimbor: concepts/self-hosting.md
@@ -76,9 +83,11 @@ nav:
       - Ledgers: gate/ledgers.md
       - Ratchets: gate/ratchets.md
       - Fixtures & markers: gate/fixtures.md
+      - The gates on the gates: gate/meta.md
   - Guides:
       - Adopting an existing app: guides/adoption.md
       - Writing custom checks: guides/custom-checks.md
+      - Troubleshooting: guides/troubleshooting.md
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md

@@ -18,15 +18,34 @@ default ruleset (the same one celebrimbor holds itself to).
 
 If a tool's output cannot be parsed — a non-zero exit with unrecognized text,
 usually a config error — the gate **refuses** rather than reporting clean. A tool
-that told you nothing you could read has not told you all is well.
+that told you nothing you could read has not told you all is well:
+
+```mermaid
+flowchart LR
+    T["run ruff / mypy<br/>(your pinned version)"] --> P{parse the<br/>output}
+    P -->|clean| G([pass])
+    P -->|"violations found"| F([fail — with findings])
+    P -->|"can't read it"| R([refused — red])
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class R,F red
+    class G green
+```
+
+In a **trusted environment** (CI), a *missing* tool is itself a refusal — the
+toolchain was promised present. On a dev box it skips with a reason, so a
+contributor without mypy installed is not blocked by a gate CI will run anyway.
 
 ## Structure
 
 These are measured directly from the AST, not delegated to a linter, so the
-numbers are pinned to *your* codebase rather than to a tool's next release. Every
-limit is a ceiling, not a target.
+numbers are pinned to *your* codebase rather than to a tool's next release. On a
+greenfield tree every limit is a hard ceiling; on a **legacy** tree the same
+gates [ratchet](ratchets.md#structure-grandfather-the-debt-hold-the-line) —
+existing breaches grandfather in and can only shrink — so you are never forced
+to hand-write dozens of exemptions just to adopt.
 
-`celebrimbor.structure.complexity` enforces per-callable budgets:
+`celebrimbor.structure.complexity` enforces per-callable and per-module budgets:
 
 | Metric | Default |
 |---|---|
@@ -38,6 +57,8 @@ limit is a ceiling, not a target.
 | return statements | 8 |
 | function lines | 80 |
 | file lines | 500 |
+| public callables per module | 20 |
+| domains per module | 1 |
 
 Positional and keyword-only parameters are counted separately on purpose: a long
 positional list is mis-orderable at the call site, while `f(a=1, ..., g=7)`
@@ -45,13 +66,14 @@ documents itself. Return count is generous because guard-clause style — many
 early returns — is how you *avoid* deep nesting, and nesting has the stronger
 justification.
 
-`celebrimbor.structure.cohesion` enforces **one domain per module**, but it does
-*not* count classes. It builds the module's intra-reference graph (definitions
-that mention each other, plus definitions that share imported vocabulary) and
-counts connected components. Five classes that are about each other are one
-domain; one class and an unrelated function family are two. This distinction is
-load-bearing: a naive class count flags a cohesive value-vocabulary module and
-misses a genuinely mixed one.
+The same gate also enforces **one domain per module** (it reports these under
+`celebrimbor.structure.complexity`; there is no separate `cohesion` gate id). It
+does *not* count classes: it builds the module's intra-reference graph
+(definitions that mention each other, plus definitions that share imported
+vocabulary) and counts connected components. Five classes that are about each
+other are one domain; one class and an unrelated function family are two. A naive
+class count would flag a cohesive value-vocabulary module and miss a genuinely
+mixed one.
 
 ## Known-bad and markers
 

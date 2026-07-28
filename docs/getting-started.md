@@ -53,10 +53,10 @@ celebrimbor gate           # PR: adds coverage ratchet, invariants, impact      
 celebrimbor gate --full    # merge/release: adds mutation                           (as slow as it must be)
 ```
 
-## Turn on obligation
+## Turn on the obligation engine
 
-obligation is the obligation engine, and it is opt-in — nothing here reddens until
-you author the map it reads.
+The obligation gates are opt-in — nothing here reddens until you author the map
+they read.
 
 ```bash
 celebrimbor init --surfaces
@@ -87,10 +87,13 @@ and as the only place ratchets may take a baseline.
 
 ```yaml
 # .github/workflows/gate.yml
-- run: pip install -e ".[dev]"
-- run: coverage run -m pytest      # produces the .coverage the ratchet reads
-- run: celebrimbor gate            # PR stage
+- run: pip install celebrimbor[commodity]   # + your own test deps
+- run: coverage run -m pytest               # produces the .coverage the ratchet reads
+- run: celebrimbor gate                      # PR stage
 ```
+
+Once you can see the enforced rules for a project at a glance with `celebrimbor
+explain`, you know exactly what a green run is promising.
 
 ## Drive it from code
 

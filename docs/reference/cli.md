@@ -35,15 +35,35 @@ celebrimbor gate [--fast | --full] [OPTIONS]
 |---|---|
 | `--fast` | pre-commit stage (~10s) |
 | (default) | PR stage (~2min) — adds coverage ratchet, invariants, impact |
-| `--full` | release stage — adds mutation |
+| `--full` | release stage — adds mutation and container/integration steps |
 | `--root DIR` | project root (default: cwd) |
 | `--diff-base REF` | git ref the impact gate diffs against |
 | `-v`, `--verbose` | show hints, skips, and full findings |
 | `--plain` | no color — for logs and CI annotations |
-| `--update-baselines` | re-baseline ratchets (requires `--reason`, pinned env) |
+| `--update-baselines` | re-baseline the coverage, mutation, **and structure** ratchets (requires `--reason`, pinned env) |
 | `--reason TEXT` | why a baseline is being moved — recorded |
 
-Exit code is `0` only if every check that ran proved its claim.
+Exit code is `0` only if every check that ran proved its claim. A green and a red
+run:
+
+```console
+$ celebrimbor gate --fast
+  ✓ celebrimbor.lint            ruff reports no violations
+  ✓ celebrimbor.types           mypy reports no errors
+  ✓ celebrimbor.structure.complexity   every module within budget
+  – celebrimbor.surface.completeness   skipped: no surface map (obligation, opt-in)
+  GREEN   9 proved   0 red   4 skipped   0.28s
+
+$ celebrimbor gate --fast
+  ✗ celebrimbor.format          1 file(s) need formatting
+      · src/app/core.py: file is not formatted
+        → run `ruff format .`
+  ⊘ celebrimbor.types           mypy is not installed
+      a trusted environment promised the toolchain; a missing tool is red
+  RED   7 proved   1 failed   1 refused   0.31s
+```
+
+`--version` and `-h` / `--help` are available on every command.
 
 ## `celebrimbor ratify`
 
@@ -62,8 +82,17 @@ not looked at" is the one action nobody should take by accident.
 
 Print the role taxonomy, the capability budget, and every registered check with
 its falsifier — all derived from the same tables the gates read, so it cannot
-drift from what is enforced.
+drift from what is enforced. It is the fastest way to see the rules a project is
+actually held to.
 
-```bash
-celebrimbor explain
+```console
+$ celebrimbor explain
+## Role obligations
+  pure          a property or unit test over its contract
+  parser        a unit test with malformed input that must be refused
+  ...
+## Registered checks
+  celebrimbor.lint                      → celebrimbor's ruff config
+  celebrimbor.surface.evidence  [obligation]  → tests/negative/test_evidence_gate.py::...
+  ...
 ```

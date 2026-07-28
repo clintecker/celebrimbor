@@ -36,6 +36,33 @@ Your check runs in the same ordered registry as the builtins, under the same
 guarantee that no check escapes the runner, and its result flows through the same
 fail-closed vocabulary.
 
+### Every parameter
+
+| Parameter | Meaning |
+|---|---|
+| `id` | unique, dotted, namespaced to your app (`myapp.*`) — ids address results |
+| `title` | one line, shown in gate output |
+| `falsified_by` | **required** — the fixture/test that turns it red, or an `Unproven` (see below) |
+| `stage` | `"fast"` (pre-commit) · `"default"` (PR) · `"full"` (release). Default `"fast"` |
+| `family` | `Family.COMMODITY` (default — always runs) or `Family.OBLIGATION` (opt-in; use this if your check reads an authored ledger and should *skip* when it is absent) |
+| `tags` | optional labels for your own grouping |
+
+A check that reads a ledger you author should declare itself `obligation` so it
+skips (not fails) on a project that has not opted in:
+
+```python
+from celebrimbor import Family
+
+@celebrimbor.check(
+    id="myapp.migrations",
+    title="every migration is listed in the manifest ledger",
+    stage="default",
+    family=Family.OBLIGATION,
+    falsified_by="tests/negative/test_migrations.py::test_orphan_migration",
+)
+def check_migrations(ctx): ...
+```
+
 ## `falsified_by` is required
 
 There is no default. The framework will not let you register a gate without
@@ -71,8 +98,29 @@ A check receives a `Context` with everything it is allowed to know:
 - `ctx.stage` — the stage being run.
 - `ctx.changed_files()` — repo-relative paths changed against the diff base, or
   `None` if the diff cannot be computed (treat `None` as a reason to refuse).
+- `ctx.is_git_repo()` — whether the root is a git working tree.
 - `ctx.memo(key, produce)` — compute an expensive artifact once per run and share
-  it across checks.
+  it across checks (this is how the builtin gates parse the AST once, not
+  per-check, and is most of what keeps the fast stage under budget).
+
+A check must **not** branch on other checks' results — a check whose verdict
+depends on another's is a check whose falsifier no longer isolates it. Only the
+terminal completeness check may read the in-progress report.
+
+### Findings carry location
+
+`Finding` is how a `fail` points at the problem. Give it everything you have — the
+gate output uses all of it:
+
+```python
+celebrimbor.Finding(
+    message="cyclomatic complexity is 14 (limit 10)",
+    path=Path("src/app/core.py"),
+    line=42,
+    code="complexity",          # short slug, groupable
+    hint="extract the branches into named helpers",
+)
+```
 
 ## Adapting a "raise on failure" check
 

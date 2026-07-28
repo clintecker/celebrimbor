@@ -36,6 +36,24 @@ celebrimbor gate           # default stage — pull request  — target < ~2min
 celebrimbor gate --full    # full stage    — merge/release — as slow as it must be
 ```
 
+Each stage *contains* the cheaper one, so nothing you ran at pre-commit is
+skipped later:
+
+```mermaid
+flowchart LR
+    subgraph full["gate --full · release"]
+        direction LR
+        subgraph def["gate · pull request"]
+            direction LR
+            subgraph fast["gate --fast · pre-commit"]
+                A["commodity gates<br/>+ cheap obligation gates"]
+            end
+            B["+ coverage · invariants · impact"]
+        end
+        C["+ mutation"]
+    end
+```
+
 ## The family axis — what kind of check
 
 - **`commodity` — the commodity ladder.** Lint, types, format, structure,
@@ -51,8 +69,7 @@ celebrimbor gate --full    # full stage    — merge/release — as slow as it m
 | Check | Stage | Family | What it enforces |
 |---|---|---|---|
 | `lint` / `format` / `types` | fast | commodity | ruff + mypy, strict, shelled out |
-| `structure.complexity` | fast | commodity | complexity, nesting, length, param budgets |
-| `structure.cohesion` | fast | commodity | one domain per module (connected components) |
+| `structure.complexity` | fast | commodity | complexity, nesting, length, param budgets — **and** one-domain-per-module cohesion |
 | `structure.capabilities` | fast | obligation | dependencies injected, budgeted by role |
 | `surface.completeness` | fast | obligation | every public callable is in a ratified map |
 | `surface.naming` | fast | obligation | a callable named for a stronger role than assigned |
@@ -86,6 +103,11 @@ celebrimbor gate — fast stage
 
 - `✓` proved, `✗` failed (with a finding), `⊘` refused (could not check — also
   red), `–` skipped (with its reason).
+- **`⊘` refused vs `–` skipped** is the distinction to internalize: *refused*
+  means the gate could not reach a conclusion (missing tool, unparseable file,
+  no diff base) and is **red**; *skipped* means an obligation gate has no ledger
+  to read yet, which is opt-in and **not red**. "I couldn't check" and "there is
+  nothing to check here" are different answers, and only the first fails.
 - `--plain` drops color for logs and CI annotations; `-v` widens findings and
   shows hints and skips.
 - Exit code is `0` only if every check that ran proved its claim.

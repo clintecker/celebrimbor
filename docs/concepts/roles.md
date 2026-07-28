@@ -17,11 +17,37 @@ earns trust.
 | `adapter` | a contract test against fake and real backends | everything |
 | `presenter` | an integration or end-to-end run | filesystem, process, environment |
 
+The third column is the **capability budget** — which external dependencies a
+callable of that role may reach for instead of being handed. It is enforced by
+the [capabilities gate](../gate/capabilities.md) and is the reason `adapter`
+carries an open budget while `pure` carries none.
+
 Roles are assigned **by module default with per-callable overrides** — never one
 row per function. A five-hundred-callable app has a map of a few dozen lines,
 because a map nobody can read is a map nobody ratifies. A callable that genuinely
 owes no direct proof is *exempted* by name, with a reason and a review date —
-never silently.
+never silently. Here is a real fragment of `.celebrimbor/surfaces.yaml`:
+
+```yaml
+version: 1
+modules:
+  myapp.parsing:            # every callable here is a parser…
+    role: parser
+    status: ratified
+    pin: "a1b2c3d4e5f6"     # the shape this role was ratified against
+    overrides:
+      dump_debug: pure      # …except this one, a plain serializer
+  myapp.reporting:
+    role: producer
+    status: inferred        # RED until a human ratifies it
+exemptions:
+  myapp.parsing:_scratch:   # owes no direct proof, on the record
+    reason: internal cache key; covered by the round-trip test
+    review_by: 2026-10-01
+```
+
+A whole 57-module map authored this way — celebrimbor's own — is
+[on GitHub](https://github.com/clintecker/celebrimbor/blob/main/.celebrimbor/surfaces.yaml).
 
 ## Inference, and its safe direction
 
@@ -85,10 +111,65 @@ socket, and the shape changes, the pin breaks, and the row **reverts to
 un-ratified** — red until a human looks again. This is the answer to "someone
 edited it into something more complex and never reclassified it."
 
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Absent
+    Absent --> Inferred: init --surfaces<br/>(name has a signal)
+    Absent --> Ratified: authored by hand
+    Inferred --> Ratified: celebrimbor ratify<br/>(human confirms + pin stamped)
+    Ratified --> Unratified: code's shape drifts<br/>(pin no longer matches)
+    Unratified --> Ratified: re-ratify<br/>(human looks again)
+    note right of Absent
+        RED — a callable
+        with no row is a hole
+    end note
+    note right of Inferred
+        RED — a guess is
+        not a judgment
+    end note
+    note right of Ratified
+        GREEN
+    end note
+    note right of Unratified
+        RED — the sign-off
+        is about older code
+    end note
+```
+
+Only the ratified state is green, and the only way in is a human confirmation —
+inference and drift both leave you red.
+
 ## The obligation rank
 
-The roles are totally ordered by how much isolating proof they demand
-(`producer` highest, the escape roles lowest). The ordering exists for exactly
-one reason — the safe-direction rule above. When inference is torn between two
-roles, it proposes the higher-ranked one. When two roles tie, it abstains rather
-than guess.
+The roles are ordered by how much isolating proof they demand — highest to
+lowest:
+
+```
+producer (7)  >  verifier (6)  >  adapter (5)  >  parser (4) ≈ orchestrator (4)
+              >  normalizer (3)  >  pure (1) ≈ presenter (1)
+```
+
+`pure` and `presenter` — the two escape roles — sit at the bottom, and inference
+is *forbidden* from ever proposing them (a wrong guess there silently voids the
+gates). The ordering exists for exactly one reason: the safe-direction rule
+above. When inference is torn between two roles it proposes the higher-ranked
+one; when two tie, it abstains.
+
+## Policy roles and the impact gate
+
+Six of the eight roles are **policy-bearing** — they *decide* or *attest*
+something, so a change to them changes what the system guarantees:
+
+| Policy roles | Not policy |
+|---|---|
+| `parser` · `normalizer` · `verifier` · `producer` · `orchestrator` · `adapter` | `pure` · `presenter` |
+
+This is what the [change-impact gate](../gate/ledgers.md#the-impact-gate) keys
+on. When a commit modifies a module whose role is policy-bearing, the gate asks:
+*is there a recorded invariant that governs this?* If not, the change is a silent
+alteration of a guarantee, made in a place with no promise watching it — and the
+gate reddens. A change to a `pure` helper carries no such obligation, because a
+pure function decides nothing about the system's promises. Which roles count as
+policy is [configurable](../reference/configuration.md) (`policy_roles`), to
+match an existing harness's notion of one.

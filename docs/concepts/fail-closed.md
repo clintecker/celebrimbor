@@ -47,7 +47,36 @@ is the sole place check-authored code is called:
   result would read as both a missing check and a stray pass).
 
 None of these paths can produce `pass`. That is the property that makes the
-runner itself fail closed.
+runner itself fail closed. Every branch that ends in "we could not prove it"
+funnels to red:
+
+```mermaid
+flowchart TD
+    S([check runs]) --> A{raises?}
+    A -->|yes| REF[REFUSED]
+    A -->|no| B{returns a<br/>CheckResult?}
+    B -->|"no — None or wrong type"| REF
+    B -->|yes| C{filed under<br/>the right id?}
+    C -->|no| REF
+    C -->|yes| V{verdict}
+    V --> PASS[PASS]
+    V --> FAIL[FAIL]
+    V --> RV[REFUSED]
+    V --> SKIP["SKIPPED<br/>(reason required)"]
+    PASS --> G([green])
+    SKIP --> G
+    FAIL --> RED([red])
+    RV --> RED
+    REF --> RED
+    classDef red fill:#c0392b,stroke:#7b241c,color:#fff
+    classDef green fill:#1e8449,stroke:#145a32,color:#fff
+    class RED,REF,FAIL,RV red
+    class G,PASS,SKIP green
+```
+
+The diagram has one deliberate asymmetry: there are three ways to reach red and
+only two to reach green, and every "could not tell" arrow points at red. That is
+fail-closed drawn out — uncertainty is not given the benefit of the doubt.
 
 ## The no-silent-skip promise
 
