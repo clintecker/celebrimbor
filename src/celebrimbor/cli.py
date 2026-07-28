@@ -108,6 +108,7 @@ def gate(**options: Any) -> None:
       (default) + coverage ratchet, invariants, impact      (~2min)
       --full    + mutation, container/integration steps
     """
+    from .checks import CheckModuleError, load_check_modules
     from .context import Context
     from .reporting import render, render_plain
     from .runner import load_builtin_checks, run
@@ -128,6 +129,12 @@ def gate(**options: Any) -> None:
         update_baselines=opts.update_baselines,
         update_reason=opts.reason,
     )
+    # The app's own @check modules, so `celebrimbor gate` runs them too. A module
+    # that will not import is a hard error, not a silently smaller gate.
+    try:
+        load_check_modules(ctx.config.check_modules)
+    except CheckModuleError as exc:
+        raise click.ClickException(str(exc)) from exc
     report = run(ctx)
 
     if opts.plain:

@@ -116,6 +116,12 @@ class CheckSpec:
     """`obligation` checks are opt-in: absent unless the adopter authored the
     ledger they read. `commodity` checks are always registered."""
 
+    terminal: bool = False
+    """The one check that must run *after* every other — the completeness gate
+    that compares what ran against the registry. It sorts last no matter when it
+    registered, so a check registered after it (an app's own, loaded by the CLI)
+    still runs before it and is covered. Reserved for celebrimbor's own use."""
+
     @property
     def falsifier_paths(self) -> tuple[str, ...]:
         if isinstance(self.falsified_by, Unproven):
@@ -161,7 +167,9 @@ class Registry:
         return len(self._specs)
 
     def __iter__(self) -> Iterator[CheckSpec]:
-        return iter(sorted(self._specs.values(), key=lambda s: s.order))
+        # Terminal checks sort after everything else, so a check registered after
+        # the terminal one (an app's, loaded by the CLI) still runs before it.
+        return iter(sorted(self._specs.values(), key=lambda s: (s.terminal, s.order)))
 
     def __contains__(self, check_id: object) -> bool:
         return check_id in self._specs
@@ -228,6 +236,7 @@ def check(
     stage: str | Stage = Stage.FAST,
     tags: Iterable[str] = (),
     family: Family = Family.COMMODITY,
+    terminal: bool = False,
     registry: Registry | None = None,
 ) -> Callable[[CheckFn], CheckFn]:
     """Register a check into the ordered registry the runner proves complete.
@@ -277,6 +286,7 @@ def check(
                 order=target.next_order(),
                 tags=frozenset(tags),
                 family=family,
+                terminal=terminal,
             )
         )
         return fn

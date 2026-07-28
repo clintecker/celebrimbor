@@ -4,6 +4,29 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 — 2026-07-28
+
+`check_modules` — the CLI can now run an app's own `@check` registrations, so
+`celebrimbor gate` is the whole gate, not just the builtins (issue #7).
+
+### Added
+
+- **`[tool.celebrimbor] check_modules = ["myapp.quality_checks"]`.** The CLI
+  imports each listed module (after the builtins, before the run) so an
+  adopter's domain checks run through `celebrimbor gate` itself, rather than
+  requiring a hand-rolled programmatic entry point. A module that will not
+  import is a **hard, fail-closed error** — a declared check that silently never
+  runs is the exact failure mode this harness exists to prevent (same as #1).
+  New `celebrimbor.checks.load_check_modules` / `CheckModuleError`.
+
+### Fixed
+
+- **The terminal completeness check now sorts last unconditionally.** It had
+  relied on being registered last; a check registered *after* it (which is what
+  loading an app module does) would run after it and be misreported as
+  "escaped". `CheckSpec` gained a `terminal` flag and the registry sorts on it,
+  so the completeness gate covers app checks correctly.
+
 ## 0.6.0 — 2026-07-28
 
 Retire the numbered "Tier 0 / Tier 1." The two check families are now named,

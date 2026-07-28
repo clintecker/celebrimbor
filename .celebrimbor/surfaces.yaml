@@ -34,11 +34,11 @@ modules:
   celebrimbor:
     role: orchestrator
     status: ratified
-    pin: "f8c29b29ffc2"
+    pin: "eb5d7379af40"
   checks:
     role: producer
     status: ratified
-    pin: "2f3c0954a659"
+    pin: "fbb206579a47"
   checks._shared:
     role: parser
     status: ratified
@@ -105,7 +105,7 @@ modules:
   cli:
     role: adapter
     status: ratified
-    pin: "9510d11b0988"
+    pin: "2fc2ca0a2661"
     overrides:
       explain: presenter
       main: pure

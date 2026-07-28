@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from .context import Context
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     "CheckResult",
@@ -63,11 +63,13 @@ def gate(
     on ``not report.ok`` themselves — making that the default would hide the
     per-check detail that is the actual product.
     """
+    from .checks import load_check_modules
     from .context import Context as _Context
     from .runner import load_builtin_checks, run
 
     load_builtin_checks()
     ctx = _Context.for_root(root, stage=stage, diff_base=diff_base)
+    load_check_modules(ctx.config.check_modules)  # raises CheckModuleError, like a bad config
     return run(ctx)
 
 

@@ -103,6 +103,14 @@ class Config:
     exclude: tuple[str, ...] = ()
     """Glob patterns excluded from the surface inventory."""
 
+    check_modules: tuple[str, ...] = ()
+    """Importable modules that register the app's own ``@check`` gates. The CLI
+    imports each (after celebrimbor's builtins, before the run) so an adopter's
+    domain checks run through ``celebrimbor gate`` itself, not only through a
+    hand-rolled programmatic entry point. A module that cannot be imported is a
+    hard, fail-closed error — a declared check that silently never runs is the
+    exact failure mode this harness exists to prevent."""
+
     disabled_checks: frozenset[str] = frozenset()
     """Exceptions, on the record. Disabling a check is visible in every run."""
 
@@ -276,6 +284,7 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "import_check": _as_bool,
     "min_coverage_floor": _as_floor,
     "exclude": _as_str_tuple,
+    "check_modules": _as_str_tuple,
     "disabled_checks": _as_str_set,
     "policy_roles": lambda value, key: _parse_policy_roles(value, key),
     "limits": lambda value, _key: _parse_limits(value),

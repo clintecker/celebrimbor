@@ -92,6 +92,11 @@ import_check = true            # opt in to the runtime import-health gate (it im
 exclude = ["*/generated/*"]    # globs excluded from the surface inventory
 disabled_checks = ["celebrimbor.mutation"]   # exceptions, on the record
 
+# Your own @check modules. The CLI imports each so `celebrimbor gate` runs your
+# domain checks too — not only the builtins. A module that will not import is a
+# hard, fail-closed error, never a silently smaller gate.
+check_modules = ["myapp.quality_checks"]
+
 # Which roles the change-impact gate governs. Empty = the default
 # (parser, normalizer, verifier, producer, adapter, orchestrator). Set it to
 # match an existing harness's notion of a policy role. An unknown role name is

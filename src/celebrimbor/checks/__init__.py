@@ -19,6 +19,8 @@ everything it is checking.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 CHECK_MODULES: tuple[str, ...] = (
     "meta",
     "structure",
@@ -63,3 +65,42 @@ def _reset_for_tests() -> None:
     """Allow a test to force a re-import cycle. Not part of the public API."""
     global _loaded
     _loaded = False
+
+
+class CheckModuleError(RuntimeError):
+    """A configured app check module could not be imported.
+
+    Fail closed: a declared check that cannot load is a gate silently missing,
+    not a gate that passed — the same failure mode issue #1 exists to prevent —
+    so it is a hard error, never a skip.
+    """
+
+
+def load_check_modules(names: Iterable[str]) -> tuple[str, ...]:
+    """Import the app's own ``@check`` modules so their registrations exist.
+
+    The sibling of :func:`load_all`: that one imports celebrimbor's builtin
+    check modules, this one imports the modules an adopter names in
+    ``[tool.celebrimbor] check_modules``. The CLI calls it after the builtins and
+    before the run, so an app's domain checks run through ``celebrimbor gate``
+    itself rather than only through a hand-rolled programmatic entry point.
+
+    Returns the names it imported — an observable result, so the load can be
+    inspected rather than trusted. Raises :class:`CheckModuleError` on the first
+    module that will not import, because a check that cannot load must not vanish
+    quietly.
+    """
+    import importlib
+
+    loaded: list[str] = []
+    for name in names:
+        try:
+            importlib.import_module(name)
+        except Exception as exc:
+            raise CheckModuleError(
+                f"check module {name!r} (from [tool.celebrimbor] check_modules) could "
+                f"not be imported: {type(exc).__name__}: {exc}. Refusing to run a gate "
+                "that is missing a declared check."
+            ) from exc
+        loaded.append(name)
+    return tuple(loaded)

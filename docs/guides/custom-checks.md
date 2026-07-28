@@ -36,6 +36,28 @@ Your check runs in the same ordered registry as the builtins, under the same
 guarantee that no check escapes the runner, and its result flows through the same
 fail-closed vocabulary.
 
+## Make the CLI run it
+
+Registration happens by import side-effect, so `celebrimbor gate` only sees your
+check if its module gets imported. Tell the CLI which modules to import:
+
+```toml
+[tool.celebrimbor]
+check_modules = ["myapp.quality_checks"]
+```
+
+The CLI imports each listed module (after the builtins, before the run), so your
+domain checks run through `celebrimbor gate` itself — the same one-line
+pre-commit hook and CI step as everyone else. The completeness check then covers
+your checks too: it runs *last* no matter when a check registered, so a check
+loaded this way still runs before it and is counted.
+
+A module that will not import is a **hard, fail-closed error**, not a silently
+smaller gate — a declared check that vanishes is the exact failure mode this
+harness exists to prevent. Without `check_modules`, the CLI runs only the
+builtins and your checks are absent, so this is the field that lets you *lean on*
+the CLI rather than wrap it.
+
 ### Every parameter
 
 | Parameter | Meaning |

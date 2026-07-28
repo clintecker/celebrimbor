@@ -31,6 +31,7 @@ _ID = "celebrimbor.completeness"
     id=_ID,
     title="no registered check escaped the runner",
     stage=Stage.FAST,
+    terminal=True,
     falsified_by="tests/negative/test_runner_completeness.py::test_dropped_check_is_red",
 )
 def check_runner_completeness(ctx: Context) -> CheckResult:
