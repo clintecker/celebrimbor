@@ -34,7 +34,10 @@ ignore does not hide the rule) and confirms the diagnostic fires.
 
 `ruff` and `mypy` are built-in shorthands, but the gate is not limited to them.
 An app with its own domain linter declares how to run it, and its known-bad
-fixtures get the same three guarantees:
+fixtures get the same three guarantees. There are two ways to run it, and two
+ways to match:
+
+**As a subprocess** — a command template with a `{file}` placeholder:
 
 ```toml
 [tool.celebrimbor.known_bad_checkers.style_audit]
@@ -42,11 +45,31 @@ command = "python -m myapp.style_audit {file}"   # {file} = the fixture path
 pattern = "^([A-Z-]+)"                            # first group = the diagnostic code
 ```
 
-The gate runs the command on each fixture that names `style_audit`, extracts the
-codes (with `pattern`, or one per line if omitted), and confirms the expected
-diagnostic is among them. A checker that will not run is *unverifiable* — red,
-not a quiet pass. This is what lets an app retire its own hand-rolled
-fixture-provenance auditor and lean on celebrimbor instead.
+**In-process** — a `module:function` that takes the fixture path and returns the
+diagnostics it produces, for a checker with no clean per-file subprocess entry (a
+book-context-bound editorial linter, say). celebrimbor imports and calls it:
+
+```toml
+[tool.celebrimbor.known_bad_checkers.style_audit]
+callable = "myapp.editorial:diagnostics_for"     # def diagnostics_for(path) -> list[str]
+match = "substring"
+```
+
+**`match`** is `exact` by default (the declared diagnostic is an exact element of
+what the checker emits — right for stable codes). Set `substring` when the linter
+emits human phrases with a variable part, and the fixture passes when its declared
+phrase appears *inside* some emitted line:
+
+```
+em_dash.md:4: sentence break uses an em dash   ← emitted
+diagnostic: "uses an em dash"                  ← declared, matched as a substring
+```
+
+Either way, the gate confirms the expected diagnostic fires; a checker that will
+not run — a command that is absent, a callable that will not import, a checker
+that raises — is *unverifiable* (red), never a quiet pass. This is what lets an
+app retire its own hand-rolled fixture-provenance auditor and lean on celebrimbor
+instead.
 
 ## Marker grammar
 

@@ -50,9 +50,11 @@ Both default to a CI signal (`CI=1`, or the usual CI env vars, or
 check_modules = ["myapp.quality_checks"]
 
 # A domain linter that proves its own tests/known-bad/ fixtures (beyond ruff/mypy).
+# Either a subprocess `command` (with {file}) or an in-process `callable`
+# ("module:function" returning the diagnostics); `match` is "exact" or "substring".
 [tool.celebrimbor.known_bad_checkers.style_audit]
-command = "python -m myapp.style_audit {file}"   # {file} = the fixture path
-pattern = "^([A-Z-]+)"                            # optional: first group = the code
+callable = "myapp.editorial:diagnostics_for"     # or: command = "... {file}"
+match = "substring"                              # for phrase-emitting linters
 ```
 
 `check_modules` is [Writing custom checks](../guides/custom-checks.md);

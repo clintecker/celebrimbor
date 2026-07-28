@@ -4,6 +4,32 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.0 — 2026-07-28
+
+Two more shapes of real-world known-bad checker fit now, so an app with domain
+linters can retire its provenance auditor entirely (issue #10).
+
+### Added
+
+- **Substring match mode.** `[tool.celebrimbor.known_bad_checkers.<name>] match`
+  is `exact` (default) or `substring`. Substring lets a fixture pass when its
+  declared diagnostic appears *inside* an emitted line — for linters that emit
+  human phrases with a variable part (`sentence break uses an em dash`) rather
+  than stable codes. The three provenance guarantees are unchanged; only how a
+  line is compared.
+- **In-process Python checker seam.** A checker can be a `callable =
+  "module:function"` instead of a `command`. celebrimbor imports it and calls
+  `func(path) -> Iterable[str]` in-process — for checkers with no clean per-file
+  subprocess entry (book-context-bound editorial linters). Composes with
+  `match`. Every failure (bad ref, import error, a checker that raises) is a
+  fail-closed *unverifiable*, never a quiet pass.
+
+### Changed (breaking)
+
+- `config.CheckerCommand` → `config.CheckerSpec`: it can now hold a `callable`,
+  not just a `command`, so the name is made honest. Config written for 0.8.0
+  (`command` + `pattern`) is unaffected; only the Python type name changed.
+
 ## 0.8.0 — 2026-07-28
 
 ### Added

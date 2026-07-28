@@ -27,7 +27,7 @@ from pathlib import Path
 
 from ..commodity.tools import ToolMissingError
 from ..commodity.tools import run as run_tool
-from ..config import CheckerCommand
+from ..config import CheckerSpec
 from ..context import Context
 from ..registry import check
 from ..result import CheckResult, Finding, Stage
@@ -77,24 +77,26 @@ def _fixture_files(known_bad_dir: Path) -> set[str]:
 
 
 def _diagnostics_from(
-    checker: str, file: Path, root: Path, checkers: dict[str, CheckerCommand]
+    checker: str, file: Path, root: Path, checkers: dict[str, CheckerSpec]
 ) -> set[str] | str:
-    """The diagnostic codes ``checker`` produces on ``file``.
+    """What ``checker`` emits for ``file`` — a set of diagnostic strings, or an
+    error string (starting ``missing:`` when the checker is absent).
 
     ``ruff`` and ``mypy`` are built-in shorthands; any other name is resolved
-    from an app's ``[tool.celebrimbor.known_bad_checkers]`` so a domain linter can
-    stand where they do (issue #9). Returns a string starting ``missing:`` when
-    the checker is absent, so the caller can apply the no-silent-skip policy.
-    Runs the checker *isolated* from project config where it can: a known-bad file
-    lives under a per-file-ignore, and the whole point is to see the rule fire
-    regardless.
+    from an app's ``[tool.celebrimbor.known_bad_checkers]`` and run either as a
+    subprocess (``command``) or in-process (``callable``). Runs the checker
+    *isolated* from project config where it can: a known-bad file lives under a
+    per-file-ignore, and the whole point is to see the rule fire regardless.
     """
     if checker == "ruff":
         args = ["check", "--isolated", "--select", "ALL", "--output-format", "json", str(file)]
     elif checker == "mypy":
         args = ["--no-error-summary", "--show-error-codes", "--no-color-output", str(file)]
     elif checker in checkers:
-        return _custom_diagnostics(checkers[checker], file, root)
+        spec = checkers[checker]
+        if spec.callable_ref is not None:
+            return _callable_diagnostics(spec.callable_ref, file)
+        return _command_diagnostics(str(spec.command), spec.code_pattern, file, root)
     else:
         known = ", ".join(sorted({"ruff", "mypy", *checkers}))
         return (
@@ -112,11 +114,13 @@ def _diagnostics_from(
     return _mypy_codes(result.combined)
 
 
-def _custom_diagnostics(spec: CheckerCommand, file: Path, root: Path) -> set[str] | str:
-    """Run an app-declared checker command and extract its diagnostic codes."""
+def _command_diagnostics(
+    command: str, pattern: str | None, file: Path, root: Path
+) -> set[str] | str:
+    """Run an app-declared checker *command* and extract its diagnostics."""
     import shlex
 
-    argv = shlex.split(spec.command.replace("{file}", str(file)))
+    argv = shlex.split(command.replace("{file}", str(file)))
     if not argv:
         return "missing:empty command"
     tool, args = argv[0], argv[1:]
@@ -124,7 +128,44 @@ def _custom_diagnostics(spec: CheckerCommand, file: Path, root: Path) -> set[str
         result = run_tool(tool, args, cwd=root, timeout_s=_TIMEOUT_S)
     except ToolMissingError:
         return f"missing:{tool}"
-    return _custom_codes(result.combined, spec.code_pattern)
+    return _custom_codes(result.combined, pattern)
+
+
+def _callable_diagnostics(ref: str, file: Path) -> set[str] | str:
+    """Import a ``module:function`` and call it *in-process* on ``file``.
+
+    For a checker with no clean per-file subprocess entry (book-context-bound
+    linters). The function is handed the fixture path and returns the diagnostic
+    strings it produces. Every failure mode — a malformed ref, a module or
+    attribute that will not import, a checker that raises — is a fail-closed
+    error string, never a silent pass.
+    """
+    module_name, sep, func_name = ref.partition(":")
+    if not sep or not func_name:
+        return f"malformed callable {ref!r}; expected 'module:function'"
+    import importlib
+
+    try:
+        func = getattr(importlib.import_module(module_name), func_name)
+    except (ImportError, AttributeError) as exc:
+        return f"missing:{ref} ({type(exc).__name__}: {exc})"
+    try:
+        produced = func(file)
+    except Exception as exc:  # a checker that blows up is unverifiable, not a pass
+        return f"checker {ref} raised on {file.name}: {type(exc).__name__}: {exc}"
+    return {str(item) for item in produced}
+
+
+def _diagnostic_matches(diagnostic: str, produced: set[str], spec: CheckerSpec | None) -> bool:
+    """Whether the declared diagnostic is present in what the checker emitted.
+
+    ``exact`` (the default, and always for ruff/mypy) wants an exact element;
+    ``substring`` wants the declared phrase inside some emitted line, for a
+    linter whose message has a stable signature phrase and a variable part.
+    """
+    if spec is not None and spec.match == "substring":
+        return any(diagnostic in line for line in produced)
+    return diagnostic in produced
 
 
 def _custom_codes(output: str, pattern: str | None) -> set[str]:
@@ -226,7 +267,7 @@ def _provenance_findings(
     expectations: dict[str, Expectation],
     directory: Path,
     root: Path,
-    checkers: dict[str, CheckerCommand],
+    checkers: dict[str, CheckerSpec],
 ) -> list[Finding]:
     findings: list[Finding] = []
     for filename in sorted(files & set(expectations)):
@@ -243,7 +284,7 @@ def _provenance_findings(
                     ),
                 )
             )
-        elif exp.diagnostic not in diagnostics:
+        elif not _diagnostic_matches(exp.diagnostic, diagnostics, checkers.get(exp.checker)):
             saw = ", ".join(sorted(diagnostics)) or "nothing"
             findings.append(
                 Finding(

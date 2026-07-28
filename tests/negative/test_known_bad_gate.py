@@ -202,3 +202,82 @@ def test_undeclared_checker_is_unverifiable(project: Project) -> None:
     result = project.run(_ID)
     assert result.verdict is Verdict.FAIL
     assert "known-bad-unverifiable" in codes(result)
+
+
+# --- in-process callable + substring match (issue #10) --------------------
+
+_CALLABLE_PYPROJECT = """
+    [project]
+    name = "fixture"
+    version = "0.0.0"
+
+    [tool.celebrimbor]
+    source = "src"
+
+    [tool.celebrimbor.known_bad_checkers.style_audit]
+    callable = "tests.known_bad_checker_fixture:diagnostics_for"
+    match = "substring"
+    """
+
+
+def test_in_process_callable_with_substring_match_passes(project: Project) -> None:
+    """A book-bound Python linter (no per-file subprocess) proves its fixture,
+    matched by a phrase substring rather than an exact code."""
+    project.pyproject(_CALLABLE_PYPROJECT)
+    project.write("tests/known-bad/has_badword.md", "this has a badword in it\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        has_badword.md:
+          checker: style_audit
+          diagnostic: "contains a badword"   # a substring of the emitted phrase
+          why: proves the badword rule still fires
+        """,
+    )
+    assert project.run(_ID).verdict is Verdict.PASS
+
+
+def test_substring_phrase_not_emitted_is_red(project: Project) -> None:
+    """Substring is still strict: the declared phrase must actually appear."""
+    project.pyproject(_CALLABLE_PYPROJECT)
+    project.write("tests/known-bad/has_badword.md", "this has a badword in it\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        has_badword.md:
+          checker: style_audit
+          diagnostic: "contains a typo"
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-not-rejected" in codes(result)
+
+
+def test_callable_that_cannot_import_is_unverifiable(project: Project) -> None:
+    """A callable that will not import is a fail-closed error, not a quiet pass."""
+    project.pyproject(
+        """
+        [project]
+        name = "fixture"
+        version = "0.0.0"
+
+        [tool.celebrimbor]
+        source = "src"
+
+        [tool.celebrimbor.known_bad_checkers.style_audit]
+        callable = "does.not.exist:nope"
+        """
+    )
+    project.write("tests/known-bad/thing.md", "badword\n")
+    project.write(
+        "tests/known-bad/expected.yaml",
+        """
+        thing.md:
+          checker: style_audit
+          diagnostic: anything
+        """,
+    )
+    result = project.run(_ID)
+    assert result.verdict is Verdict.FAIL
+    assert "known-bad-unverifiable" in codes(result)

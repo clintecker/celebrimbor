@@ -57,19 +57,30 @@ def _detect_ci() -> bool:
 
 
 @dataclass(frozen=True, slots=True)
-class CheckerCommand:
-    """How to run an app's own known-bad checker (issue #9).
+class CheckerSpec:
+    """How to run an app's own known-bad checker (issues #9, #10).
 
-    ``command`` is a shell-style template with a ``{file}`` placeholder; the
-    known-bad gate runs it on each fixture that names this checker and extracts
-    the diagnostic codes from its output. ``code_pattern`` is an optional regex
-    whose first group is the code (default: each non-empty output line is a
-    code). Lets an adopter's domain linter stand where only ``ruff``/``mypy``
-    used to, without weakening any of the three provenance guarantees.
+    Exactly one of two forms says *how* to run it:
+
+    * ``command`` — a shell-style template with a ``{file}`` placeholder, run as
+      a subprocess; ``code_pattern`` extracts diagnostic codes from its output
+      (first regex group, or one per line if omitted).
+    * ``callable_ref`` — ``"module:function"``, imported and called *in-process*
+      as ``func(Path) -> Iterable[str]``, for a checker that has no clean
+      per-file subprocess entry (book-context-bound linters, say).
+
+    ``match`` says how the declared ``diagnostic`` is compared to what the
+    checker emits: ``"exact"`` (default — an exact element of the emitted set) or
+    ``"substring"`` (a substring of some emitted line, for linters that emit
+    human phrases with a variable part). None of this weakens the three
+    provenance guarantees; it only changes how a single line is produced and
+    compared.
     """
 
-    command: str
+    command: str | None = None
+    callable_ref: str | None = None
     code_pattern: str | None = None
+    match: str = "exact"
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,10 +138,10 @@ class Config:
     hard, fail-closed error — a declared check that silently never runs is the
     exact failure mode this harness exists to prevent."""
 
-    known_bad_checkers: dict[str, CheckerCommand] = field(default_factory=dict)
+    known_bad_checkers: dict[str, CheckerSpec] = field(default_factory=dict)
     """App-declared known-bad checkers, keyed by the name used in
     ``expected.yaml``. Lets a domain linter (not just ``ruff``/``mypy``) prove it
-    still rejects its known-bad fixtures. See :class:`CheckerCommand`."""
+    still rejects its known-bad fixtures. See :class:`CheckerSpec`."""
 
     disabled_checks: frozenset[str] = frozenset()
     """Exceptions, on the record. Disabling a check is visible in every run."""
@@ -365,40 +376,49 @@ def _parse_paths(raw: Any) -> dict[str, str]:
     return {key: _as_str(value, f"paths.{key}") for key, value in raw.items()}
 
 
-def _parse_known_bad_checkers(raw: Any) -> dict[str, CheckerCommand]:
-    """Read ``[tool.celebrimbor.known_bad_checkers.<name>]`` (issue #9).
+def _parse_known_bad_checkers(raw: Any) -> dict[str, CheckerSpec]:
+    """Read ``[tool.celebrimbor.known_bad_checkers.<name>]`` (issues #9, #10).
 
-    Each entry needs a ``command`` (with a ``{file}`` placeholder) and may set a
-    ``pattern`` (regex, first group = the diagnostic code). A missing command is
-    an error rather than a silently-inert checker — the whole point is a checker
-    that actually runs.
+    Each entry needs exactly one of ``command`` (subprocess, with a ``{file}``
+    placeholder) or ``callable`` (``module:function``, in-process), and may set a
+    ``pattern`` (regex, first group = the code) and a ``match`` (``exact`` or
+    ``substring``). A checker with neither, or both, is an error rather than a
+    silently-inert one — the whole point is a checker that actually runs.
     """
     if not isinstance(raw, dict):
         raise ConfigError(f"known_bad_checkers must be a table, got {type(raw).__name__}")
-    out: dict[str, CheckerCommand] = {}
-    for name, body in raw.items():
-        if not isinstance(body, dict):
-            raise ConfigError(
-                f"known_bad_checkers.{name} must be a table, got {type(body).__name__}"
-            )
-        if "command" not in body:
-            raise ConfigError(
-                f"known_bad_checkers.{name} needs a `command` (with a {{file}} placeholder) — "
-                "a checker with no command cannot run"
-            )
-        if "{file}" not in str(body["command"]):
-            raise ConfigError(
-                f"known_bad_checkers.{name}.command must contain the {{file}} placeholder, so "
-                "the gate knows where to pass the fixture path"
-            )
-        pattern = body.get("pattern")
-        out[str(name)] = CheckerCommand(
-            command=_as_str(body["command"], f"known_bad_checkers.{name}.command"),
-            code_pattern=_as_str(pattern, f"known_bad_checkers.{name}.pattern")
-            if pattern
-            else None,
+    return {str(name): _checker_from(str(name), body) for name, body in raw.items()}
+
+
+def _opt_str(value: Any, where: str) -> str | None:
+    return _as_str(value, where) if value else None
+
+
+def _checker_from(name: str, body: Any) -> CheckerSpec:
+    if not isinstance(body, dict):
+        raise ConfigError(f"known_bad_checkers.{name} must be a table, got {type(body).__name__}")
+    command, call = body.get("command"), body.get("callable")
+    if bool(command) == bool(call):
+        raise ConfigError(
+            f"known_bad_checkers.{name} needs exactly one of `command` (a {{file}} "
+            "subprocess) or `callable` (a module:function run in-process)"
         )
-    return out
+    if command and "{file}" not in str(command):
+        raise ConfigError(
+            f"known_bad_checkers.{name}.command must contain the {{file}} placeholder, so "
+            "the gate knows where to pass the fixture path"
+        )
+    match = str(body.get("match", "exact")).strip()
+    if match not in {"exact", "substring"}:
+        raise ConfigError(
+            f"known_bad_checkers.{name}.match must be 'exact' or 'substring', got {match!r}"
+        )
+    return CheckerSpec(
+        command=_opt_str(command, f"known_bad_checkers.{name}.command"),
+        callable_ref=_opt_str(call, f"known_bad_checkers.{name}.callable"),
+        code_pattern=_opt_str(body.get("pattern"), f"known_bad_checkers.{name}.pattern"),
+        match=match,
+    )
 
 
 def _apply(cfg: Config, data: dict[str, Any], root: Path) -> Config:
