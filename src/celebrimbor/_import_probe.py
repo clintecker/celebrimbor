@@ -46,6 +46,27 @@ class _BlockedError(RuntimeError):
     """Raised by a guard to prevent a real side effect during import."""
 
 
+def _guarded_class(real: type, kind: str, what: str) -> type:
+    """A subclass of ``real`` that records and blocks construction during import.
+
+    Guards the *behaviour*, not the object. Replacing a class with a function
+    breaks any code that subclasses it at import time (the stdlib's own
+    ``class SSLSocket(socket):`` is why every ssl-importing module used to fail);
+    a subclass stays subclassable — a class statement over it just builds a type
+    — while an actual instantiation still flags the effect and raises, so nothing
+    is opened or spawned.
+    """
+
+    class _Guarded(real):  # type: ignore[misc]
+        def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+            _flag(kind)
+            raise _BlockedError(f"{what} during import")
+
+    _Guarded.__name__ = real.__name__
+    _Guarded.__qualname__ = real.__qualname__
+    return _Guarded
+
+
 def _install_guards() -> None:
     real_open = builtins.open
 
@@ -60,11 +81,16 @@ def _install_guards() -> None:
 
     import socket
 
-    def guarded_socket(*_args: Any, **_kwargs: Any) -> Any:
-        _flag("network")
-        raise _BlockedError("socket opened during import")
-
-    socket.socket = guarded_socket  # type: ignore[misc,assignment]
+    # `socket.socket` and `subprocess.Popen` are *classes* other classes subclass
+    # at import time — the stdlib itself does `class SSLSocket(socket):` in
+    # ssl.py, reached transitively by `urllib` → `http.client` → `ssl`, i.e. by
+    # almost everything. Replacing the class with a *function* makes that class
+    # statement build a type with a function as its base, which CPython rejects
+    # before the guard ever runs, so every ssl-importing module falsely "fails to
+    # import". The fix is to guard the *behaviour*, not the object: a subclass
+    # stays subclassable (a class statement over it just builds a type) while
+    # still recording and blocking an actual construction during import.
+    socket.socket = _guarded_class(socket.socket, "network", "socket opened")  # type: ignore[misc,assignment]
 
     def guarded_proc(kind: str) -> Callable[..., Any]:
         def guard(*_args: Any, **_kwargs: Any) -> Any:
@@ -73,7 +99,7 @@ def _install_guards() -> None:
 
         return guard
 
-    subprocess.Popen = guarded_proc("subprocess")  # type: ignore[misc,assignment]
+    subprocess.Popen = _guarded_class(subprocess.Popen, "process", "subprocess")  # type: ignore[misc,assignment]
     subprocess.run = guarded_proc("subprocess")
     subprocess.call = guarded_proc("subprocess")
     subprocess.check_output = guarded_proc("subprocess")

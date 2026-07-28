@@ -89,6 +89,38 @@ def test_import_time_subprocess_is_red(project: Project) -> None:
     assert any("process" in f.message for f in result.findings)
 
 
+def test_module_importing_ssl_is_not_a_false_positive(project: Project) -> None:
+    """Regression (#8): the socket guard must stay subclassable.
+
+    ``ssl`` does ``class SSLSocket(socket):`` and is reached transitively by
+    ``urllib`` → ``http.client`` → ``ssl`` — i.e. by almost everything. When the
+    guard replaced the ``socket.socket`` *class* with a function, that class
+    statement failed at import and reddened every module that reached it. The
+    guard is now a subclass, so an ssl-importing module imports clean.
+    """
+    _project(project)
+    project.write(
+        "src/app/uses_net.py",
+        '"""Imports ssl transitively, like almost everything."""\n'
+        "import urllib.request  # noqa: F401\n\n\ndef go() -> int:\n    return 1\n",
+    )
+    result = _run(project)
+    assert result.verdict is Verdict.PASS, [f.message for f in result.findings]
+
+
+def test_import_time_socket_is_still_blocked_and_flagged(project: Project) -> None:
+    """The subclass guard still records *and prevents* a real socket at import."""
+    _project(project)
+    project.write(
+        "src/app/opens.py",
+        '"""Opens a socket on import."""\nimport socket\n'
+        "socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n",
+    )
+    result = _run(project)
+    assert result.verdict is Verdict.FAIL
+    assert any("network" in f.message for f in result.findings)
+
+
 def test_clean_package_passes(project: Project) -> None:
     """A package that imports cleanly with no import-time effects is green."""
     _project(project)

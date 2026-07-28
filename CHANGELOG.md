@@ -4,6 +4,24 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.1 — 2026-07-28
+
+### Fixed
+
+- **The import-health probe no longer false-positives on every ssl-importing
+  module (issue #8).** The probe replaced the `socket.socket` *class* with a
+  function; the stdlib's own `class SSLSocket(socket):` in `ssl.py` — reached
+  transitively by `urllib` → `http.client` → `ssl`, i.e. by nearly every module
+  — then failed at class-creation with `TypeError: function() argument 'code'
+  must be code, not str`, before the guard even ran. With `import_check = true`
+  this reddened *every* module of a real app. The guard is now a **subclass**
+  that flags and blocks on construction, so the class stays subclassable while a
+  real import-time socket is still recorded and prevented. The same
+  class-replaced-with-a-function hazard applied to `subprocess.Popen` (also a
+  class, not a function) and is fixed the same way. Ships with two regression
+  fixtures: an ssl-importing module now passes, and an import-time socket is
+  still blocked.
+
 ## 0.7.0 — 2026-07-28
 
 `check_modules` — the CLI can now run an app's own `@check` registrations, so
