@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..context import Context
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..surface import naming
 from ..surface.audit import SurfaceAudit, audit, missing_row_snippet
@@ -82,13 +82,13 @@ def _expired_findings(result: SurfaceAudit) -> list[Finding]:
     id=_COMPLETENESS,
     title="every public callable is accounted for in a ratified surface map",
     stage=Stage.FAST,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_surface_gate.py::test_uncovered_callable_is_red",
 )
 def check_surface_completeness(ctx: Context) -> CheckResult:
     """The gate the whole obligation engine rests on.
 
-    Every Tier 1 gate keys on role, so a role means nothing unless the map is
+    Every obligation gate keys on role, so a role means nothing unless the map is
     complete. This compares the AST inventory (ground truth from source bytes)
     against the map (the human's claims) and reddens on drift in either
     direction.
@@ -158,7 +158,7 @@ def check_surface_completeness(ctx: Context) -> CheckResult:
     id=_NAMING,
     title="no callable's name promises more proof than its role demands",
     stage=Stage.FAST,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_surface_gate.py::test_naming_conflict_is_red",
 )
 def check_naming_conflict(ctx: Context) -> CheckResult:

@@ -32,7 +32,7 @@ from pathlib import Path
 
 from ..context import Context
 from ..ledgers.invariants import InvariantLedger, load_invariants
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..roles import POLICY_ROLES, Role
 from ..surface.inventory import dotted_name
@@ -102,7 +102,7 @@ def _policy_role_of(smap: SurfaceMap, module: str, policy: frozenset[Role]) -> R
     id=_ID,
     title="a changed policy-role module is named by some invariant",
     stage=Stage.DEFAULT,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_impact_gate.py::test_policy_change_without_invariant_is_red",
 )
 def check_impact(ctx: Context) -> CheckResult:

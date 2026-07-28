@@ -27,6 +27,7 @@ touch.
 from __future__ import annotations
 
 import datetime as _dt
+import enum
 import itertools
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
@@ -78,6 +79,28 @@ class Unproven(DatedWaiver):
 Falsifier = str | tuple[str, ...] | Unproven
 
 
+class Family(enum.Enum):
+    """*What kind* of check — the commodity/obligation split (the old numbered tiers).
+
+    Deliberately a **categorical pair, not a scale.** A check either needs a
+    human-authored, ratified ledger to function or it does not; there is no
+    third answer, so this is an enum of exactly two, never a number that invites
+    a "2". Not to be confused with a run's :class:`~celebrimbor.result.Stage`
+    (fast/default/full), which *is* ordinal — family is what kind of check,
+    stage is how deep a run goes. It lives here, with :class:`CheckSpec`, because
+    a check's family is a fact about the check, and this is where checks live.
+
+    - ``COMMODITY`` — the commodity ladder: lint, types, format, structure,
+      known-bad, markers. No authored ledger; green on a fresh repo. The wedge.
+    - ``OBLIGATION`` — the obligation engine: surface roles, capabilities,
+      producers, invariants, impact, imports. Opt-in and authored — each skips
+      with a reason until you create the ledger it reads.
+    """
+
+    COMMODITY = "commodity"
+    OBLIGATION = "obligation"
+
+
 @dataclass(frozen=True, slots=True)
 class CheckSpec:
     """A registered check and its metadata."""
@@ -89,9 +112,9 @@ class CheckSpec:
     falsified_by: Falsifier
     order: int
     tags: frozenset[str] = field(default_factory=frozenset)
-    tier1: bool = False
-    """Tier 1 checks are opt-in: absent unless the adopter authored the ledger
-    they read. Tier 0 checks are always registered."""
+    family: Family = Family.COMMODITY
+    """`obligation` checks are opt-in: absent unless the adopter authored the
+    ledger they read. `commodity` checks are always registered."""
 
     @property
     def falsifier_paths(self) -> tuple[str, ...]:
@@ -204,7 +227,7 @@ def check(
     falsified_by: Falsifier,
     stage: str | Stage = Stage.FAST,
     tags: Iterable[str] = (),
-    tier1: bool = False,
+    family: Family = Family.COMMODITY,
     registry: Registry | None = None,
 ) -> Callable[[CheckFn], CheckFn]:
     """Register a check into the ordered registry the runner proves complete.
@@ -253,7 +276,7 @@ def check(
                 falsified_by=resolved_falsifier,
                 order=target.next_order(),
                 tags=frozenset(tags),
-                tier1=tier1,
+                family=family,
             )
         )
         return fn

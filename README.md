@@ -55,7 +55,7 @@ looks trustworthy and code you can actually trust.
 
 ## Beyond linting, types, TDD, and pre-commits
 
-Those tools are necessary and celebrimbor runs them for you in Tier 0. But note
+Those tools are necessary and celebrimbor runs them for you on the commodity ladder. But note
 what each can and cannot see:
 
 - **Linters** check style. **Type checkers** check shapes. **TDD** checks the
@@ -104,7 +104,7 @@ careful reviewing can give you on its own.
 
 ```bash
 pip install celebrimbor              # core
-pip install "celebrimbor[tier0]"     # + ruff, mypy, pytest, coverage
+pip install "celebrimbor[commodity]"     # + ruff, mypy, pytest, coverage
 ```
 
 ## Quickstart
@@ -114,7 +114,7 @@ celebrimbor init        # scaffold opinionated ruff/mypy/pytest config + a pre-c
 celebrimbor gate --fast # lint, types, format, complexity, cohesion, known-bad, markers
 ```
 
-Tier 0 is designed to go green on a fresh repo in under ten minutes, no theory
+The commodity ladder is designed to go green on a fresh repo in under ten minutes, no theory
 of testing required. It is the adoption wedge.
 
 ## The idea
@@ -146,29 +146,29 @@ callable may reach for instead of being handed. A `pure` function calling
 so is the whole reason adapters exist. An un-injected dependency is a claim the
 test cannot contradict.
 
-## The gate: two tiers, three stages
+## The gate: two families, three stages
 
 Twenty gates. Every one carries a falsifier. Two independent axes decide what
 runs — don't conflate them:
 
-**Tiers — *what kind* of check.**
+**Family — *what kind* of check** (a fixed pair, not a scale):
 
-- **Tier 0 — the commodity ladder** (no ledger, passes on a fresh repo): lint,
-  types, format, complexity/nesting/length budgets, cohesion (one domain per
-  module), known-bad provenance, marker grammar.
-- **Tier 1 — the obligation engine** (opt-in, authored, never reddens day one):
-  surface-role completeness, naming drift, role evidence, ratification pins,
-  capability injection, no-blind-verifier producers, invariant ledger,
+- **`commodity` — the commodity ladder** (no ledger, passes on a fresh repo):
+  lint, types, format, complexity/nesting/length budgets, cohesion (one domain
+  per module), known-bad provenance, marker grammar.
+- **`obligation` — the obligation engine** (opt-in, authored, never reddens day
+  one): surface-role completeness, naming drift, role evidence, ratification
+  pins, capability injection, no-blind-verifier producers, invariant ledger,
   change-impact, import-health.
 
-**Stages — *how deep* a run goes.** Each nests the cheaper one:
+**Stage — *how deep* a run goes** (an ordinal scale). Each nests the cheaper one:
 
-- **`gate --fast`** (~10s, pre-commit): Tier 0 plus the cheap Tier 1 gates.
+- **`gate --fast`** (~10s, pre-commit): commodity plus the cheap obligation gates.
 - **`gate`** (~2min, PR): adds the coverage ratchet, invariants, change-impact.
 - **`gate --full`** (release): adds the mutation ratchet (survivor *identity*,
   not count).
 
-A check has both: the Tier 1 `invariants` gate is tier 1, and runs at the PR
+A check has one of each: the `obligation` `invariants` gate runs at the PR
 stage. Every gate **fails closed**: when it cannot prove something it refuses
 (red), never estimates. A missing tool in a trusted environment is red; a skip
 always carries its reason.

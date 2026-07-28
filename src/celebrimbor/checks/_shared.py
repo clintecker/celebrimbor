@@ -5,7 +5,7 @@ same inventory. Every expensive artifact a check needs is produced through
 this module so it is computed exactly once per run.
 
 Each loader also fixes the *failure posture* for its artifact in one place. A
-missing Tier 1 ledger is a skip (the adopter has not opted in); a present but
+missing obligation ledger is a skip (the adopter has not opted in); a present but
 malformed one is a refusal (they opted in and we cannot read their intent).
 Deciding that per-check would eventually get it backwards somewhere.
 """
@@ -56,7 +56,7 @@ def get_surface_map(ctx: Context) -> LedgerState:
         if not path.exists():
             return LedgerState(
                 skip_reason=(
-                    "no surface map: Tier 1 is opt-in. Run `celebrimbor init --surfaces` "
+                    "no surface map: the obligation gates are opt-in. Run `celebrimbor init --surfaces` "
                     "to generate a pre-filled, ratify-me map."
                 )
             )
@@ -91,7 +91,7 @@ class RatifiedCallable:
 def require_surface_map(ctx: Context, check_id: str) -> SurfaceMap | CheckResult:
     """The surface map, or the verdict explaining why this check cannot run.
 
-    Every Tier 1 gate opens with the same three-way decision — absent means
+    Every obligation gate opens with the same three-way decision — absent means
     skip, malformed means refuse, present means proceed — and each copy of it
     was a chance to get the skip/refuse polarity backwards in one place only.
     The union return makes the non-map branches impossible to forget: there is

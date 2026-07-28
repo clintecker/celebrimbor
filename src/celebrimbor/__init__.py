@@ -10,7 +10,7 @@ Public surface, in its entirety::
     celebrimbor.gate(stage="fast")     # run the gate programmatically
     @celebrimbor.check(...)           # register an app-specific check
     celebrimbor.Unproven(...)         # a dated admission of missing falsifier
-    celebrimbor.CheckResult, Finding, Verdict, Stage   # what a check returns
+    celebrimbor.CheckResult, Finding, Verdict, Stage, Family  # what a check returns
 
 That is the whole documented seam. There is deliberately no exposed registry
 object: a raw registry invites app code to mutate ordering or bypass
@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .registry import Unproven, check
+from .registry import Family, Unproven, check
 from .result import CheckResult, Finding, GateReport, Stage, Verdict
 
 if TYPE_CHECKING:
@@ -34,10 +34,11 @@ if TYPE_CHECKING:
 
     from .context import Context
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 __all__ = [
     "CheckResult",
+    "Family",
     "Finding",
     "GateReport",
     "Stage",

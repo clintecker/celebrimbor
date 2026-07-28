@@ -23,7 +23,7 @@ from ..context import Context
 from ..ratchets import coverage as cov
 from ..ratchets import mutation as mut
 from ..ratchets.baseline import BaselineEnvironmentError
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..yamlio import YamlError
 
@@ -69,7 +69,7 @@ def _acquire_coverage(ctx: Context) -> dict[str, float] | str:
     id=_COVERAGE,
     title="per-module coverage only rises",
     stage=Stage.DEFAULT,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_ratchet_gate.py::test_coverage_drop_is_red",
 )
 def check_coverage(ctx: Context) -> CheckResult:
@@ -184,7 +184,7 @@ def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | str:
     id=_MUTATION,
     title="no new mutant survives (survivor identity, not count)",
     stage=Stage.FULL,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_ratchet_gate.py::test_new_survivor_with_same_count_is_red",
 )
 def check_mutation(ctx: Context) -> CheckResult:

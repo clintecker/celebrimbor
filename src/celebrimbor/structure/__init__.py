@@ -6,7 +6,7 @@ asks *is this callable shaped so it could?* A two-hundred-line function with
 nesting depth seven and an ambient clock cannot be meaningfully proved by any
 test, so demanding a proof of it is demanding a fiction.
 
-Structure therefore runs first and cheaply, in Tier 0, and mostly without
+Structure therefore runs first and cheaply, in the commodity ladder, and mostly without
 needing the role map. The one gate that does need roles — the capability
 budget — is the sharpest of them, because a role turns a vague "inject your
 dependencies" into a falsifiable claim about a specific callable.

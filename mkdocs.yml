@@ -69,8 +69,8 @@ nav:
       - Fail closed: concepts/fail-closed.md
       - celebrimbor on celebrimbor: concepts/self-hosting.md
   - The gate:
-      - Stages & tiers: gate/stages-and-tiers.md
-      - Tier 0 — the commodity ladder: gate/tier-0.md
+      - Stages & families: gate/stages-and-families.md
+      - The commodity ladder: gate/commodity.md
       - Surface roles: gate/surface.md
       - Capabilities: gate/capabilities.md
       - Ledgers: gate/ledgers.md

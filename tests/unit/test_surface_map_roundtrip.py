@@ -4,7 +4,7 @@ A shape-pin is a hex digest, and roughly one digest in two hundred lands in the
 digits 0-9 only. Written unquoted, YAML reads such a pin back as an *integer*,
 and the loader — which demands a string — then refuses the entire map. This was
 found by pointing celebrimbor at its own source: one of its 49 modules pinned to
-an all-digit hash and the whole Tier 1 went dark. The falsifier is here so it
+an all-digit hash and the whole obligation engine went dark. The falsifier is here so it
 stays fixed.
 """
 

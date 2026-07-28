@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 from ..context import Context
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..surface.inventory import ModuleInfo
 from ._shared import get_inventory
@@ -59,7 +59,7 @@ def _path_entry(source_dir: Path) -> Path:
     id=_ID,
     title="every module imports cleanly, with no import-time side effects",
     stage=Stage.DEFAULT,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_import_gate.py::test_module_that_raises_on_import_is_red",
 )
 def check_imports(ctx: Context) -> CheckResult:

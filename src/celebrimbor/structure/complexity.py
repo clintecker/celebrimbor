@@ -6,7 +6,7 @@ pinned to *this* codebase rather than to whatever a tool's next release
 decides McCabe means. A baseline that shifts when a dependency upgrades is a
 baseline that reddens CI for reasons nobody changed.
 
-Ruff still runs the equivalent lint rules in Tier 0 — they are faster and give
+Ruff still runs the equivalent lint rules on the commodity ladder — they are faster and give
 better inline messages. This module exists so the *ratchet* has a stable
 denominator, and so the numbers survive a toolchain that is not installed.
 

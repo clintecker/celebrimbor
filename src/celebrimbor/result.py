@@ -31,10 +31,10 @@ from pathlib import Path
 class Stage(enum.IntEnum):
     """*When* a run happens, ordered by cost — the pre-commit / PR / release axis.
 
-    Not to be confused with a check's **tier** (``tier1: bool`` — whether it
-    belongs to the Tier 0 commodity ladder or the Tier 1 obligation engine).
-    Tier is *what kind* of check; stage is *how deep a run goes*. A single check
-    has both: e.g. the Tier 1 ``invariants`` gate runs at the ``DEFAULT`` stage.
+    Not to be confused with a check's :class:`Family` (``commodity`` vs
+    ``obligation`` — what kind of check it is). Family is *what kind*; stage is
+    *how deep a run goes*. A single check has both: e.g. the ``obligation``
+    ``invariants`` gate runs at the ``DEFAULT`` stage.
 
     A check declares the *cheapest* stage at which it is willing to run; a gate
     invocation runs every check whose stage is at or below the requested one.
@@ -265,7 +265,7 @@ class CheckResult:
     def skipped(cls, check_id: str, reason: str, *, duration_s: float = 0.0) -> CheckResult:
         """The check does not apply here. Not red, but never invisible.
 
-        Legitimate uses are narrow: the adopter has not opted into the Tier 1
+        Legitimate uses are narrow: the adopter has not opted into the obligation
         feature this check gates, or the check is inapplicable to this project
         shape. "The tool wasn't installed" is only a skip when no
         trusted-environment promise was made; otherwise it is ``refused``.

@@ -1,6 +1,6 @@
-# Tier 0 — the commodity ladder
+# The commodity ladder
 
-Tier 0 is the commodity ladder plus the structure gates: the checks that need no
+The commodity family is the commodity ladder plus the structure gates: the checks that need no
 ledger, run in seconds, and are green on a fresh repo. This is the adoption
 wedge, and it is the only part of celebrimbor most projects touch on day one.
 
@@ -55,7 +55,7 @@ misses a genuinely mixed one.
 
 ## Known-bad and markers
 
-Two more Tier 0 gates keep your *test* discipline honest — see
+Two more commodity gates keep your *test* discipline honest — see
 [Fixtures & markers](fixtures.md):
 
 - `celebrimbor.known_bad` — every file in `tests/known-bad/` must be rejected by

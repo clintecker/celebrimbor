@@ -24,7 +24,7 @@ from ..ratchets.structure import (
     ratchet,
     write_structure_baseline,
 )
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..structure.capabilities import scan_callable, violations
 from ..structure.cohesion import analyze
@@ -249,7 +249,7 @@ def _callable_hint(metric: str) -> str:
     id=_CAPABILITIES,
     title="external dependencies are injected, not reached for",
     stage=Stage.FAST,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_structure_gate.py::test_ambient_clock_in_pure_is_red",
 )
 def check_capabilities(ctx: Context) -> CheckResult:
@@ -257,7 +257,7 @@ def check_capabilities(ctx: Context) -> CheckResult:
 
     An un-injected dependency is a claim the test cannot contradict: a function
     calling ``datetime.now()`` has behaviour at midnight that no test can reach,
-    because there is no seam to reach it through. Tier 1 because the *budget*
+    because there is no seam to reach it through. obligation because the *budget*
     comes from the role. Ratchets against the shared structure baseline.
     """
     smap = require_surface_map(ctx, _CAPABILITIES)

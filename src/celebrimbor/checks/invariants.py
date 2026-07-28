@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..context import Context
 from ..ledgers.invariants import Invariant, load_invariants
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..surface.inventory import Inventory
 from ..yamlio import YamlError
@@ -65,7 +65,7 @@ def _proof_finding(inv: Invariant, root: Path) -> Finding | None:
     id=_ID,
     title="every named invariant enforcer resolves, and critical ones keep a proof",
     stage=Stage.DEFAULT,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_invariant_gate.py::test_missing_enforcer_is_red",
 )
 def check_invariants(ctx: Context) -> CheckResult:

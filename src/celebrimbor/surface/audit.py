@@ -1,6 +1,6 @@
 """The completeness audit: does the map account for every public callable?
 
-This is the gate the whole obligation engine rests on. Every Tier 1 gate keys
+This is the gate the whole obligation engine rests on. Every obligation gate keys
 on role, and a role only means something if the map is *complete* — if a
 public callable can exist that the map does not mention, then "this module is
 a producer, so it owes X" says nothing about the callables that slipped past.

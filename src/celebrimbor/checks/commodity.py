@@ -1,4 +1,4 @@
-"""Tier 0: the commodity ladder. Lint, format, types.
+"""The commodity ladder. Lint, format, types.
 
 This is the adoption wedge — it must pass on a fresh repo, needs no ledger and
 no theory of testing, and it is the only part of celebrimbor an adopter sees on
@@ -50,7 +50,7 @@ def _missing(ctx: Context, check_id: str, invocation: ladder.Invocation) -> Chec
                 f"therefore unestablished — and an unestablished claim is red, not green."
             ),
             remedy=(
-                f"install {invocation.tool} (`pip install celebrimbor[tier0]`), "
+                f"install {invocation.tool} (`pip install celebrimbor[commodity]`), "
                 "or unset CI / CELEBRIMBOR_TRUSTED"
             ),
         )

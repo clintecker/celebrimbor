@@ -47,7 +47,7 @@ The capabilities celebrimbor recognizes: `clock`, `random`, `filesystem`,
 `network`, `environment`, `process`, `database`. The detection patterns are data,
 not hidden logic — a gate whose triggers are opaque gets disabled.
 
-## Why it is Tier 1
+## Why it is obligation
 
 The *budget* comes from the role, so this gate needs a ratified map. Without one
 there is no principled answer to "is this reach allowed here" — flag every

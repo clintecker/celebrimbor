@@ -55,7 +55,7 @@ def main() -> None:
 @click.option(
     "--surfaces",
     is_flag=True,
-    help="Also infer roles and write a pre-filled, ratify-me surface map (Tier 1).",
+    help="Also infer roles and write a pre-filled, ratify-me surface map (obligation gates).",
 )
 @click.option(
     "--root",
@@ -196,7 +196,7 @@ def explain() -> None:
     read, so it cannot drift from what is actually enforced.
     """
     from .docs import budget_table, role_table
-    from .registry import default_registry
+    from .registry import Family, default_registry
     from .runner import load_builtin_checks
 
     load_builtin_checks()
@@ -206,7 +206,7 @@ def explain() -> None:
     click.echo(budget_table())
     click.echo("\n## Registered checks\n")
     for spec in default_registry():
-        marker = " [tier1]" if spec.tier1 else ""
+        marker = " [obligation]" if spec.family is Family.OBLIGATION else ""
         falsifier = spec.unproven or ", ".join(spec.falsifier_paths)
         click.echo(f"  {spec.stage.label:<8} {spec.id}{marker}")
         click.echo(f"           {spec.title}")

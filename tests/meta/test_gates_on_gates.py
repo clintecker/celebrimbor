@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from celebrimbor.checks import CHECK_MODULES
-from celebrimbor.registry import default_registry
+from celebrimbor.registry import Family, default_registry
 from celebrimbor.result import Stage
 from celebrimbor.runner import escaped, expected_ids, load_builtin_checks, run, strays
 from tests.conftest import Project
@@ -150,20 +150,20 @@ def test_every_check_declares_a_title_and_falsifier() -> None:
         )
 
 
-def test_tier1_checks_skip_rather_than_fail_without_their_ledger(project: Project) -> None:
-    """Tier 1 is opt-in, and opt-in means absent — not passing, and not red.
+def test_obligation_checks_skip_rather_than_fail_without_their_ledger(project: Project) -> None:
+    """Obligation gates are opt-in, and opt-in means absent — not passing, not red.
 
     This is the property that keeps `celebrimbor init` + `gate --fast` green on
-    a fresh repo. If a Tier 1 check ever failed instead of skipping here, the
+    a fresh repo. If an obligation gate ever failed instead of skipping here, the
     adoption wedge would be red on day one for every project.
     """
     project.module("app.thing", '"""Thing."""\n\n\ndef go() -> int:\n    """Go."""\n    return 1\n')
     report = run(project.context(), registry=default_registry(), stage=Stage.FAST)
 
     for spec in default_registry().for_stage(Stage.FAST):
-        if not spec.tier1:
+        if spec.family is not Family.OBLIGATION:
             continue
         result = report.by_id(spec.id)
         assert result is not None
-        assert not result.is_red, f"{spec.id} is Tier 1 but reddened without a ledger"
+        assert not result.is_red, f"{spec.id} is an obligation gate but reddened without a ledger"
         assert not result.proved, f"{spec.id} skipped but reported as proved"

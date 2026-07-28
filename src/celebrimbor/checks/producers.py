@@ -18,7 +18,7 @@ from pathlib import Path
 
 from ..context import Context
 from ..ledgers.producers import ProducerLedger, ProducerRecord, load_producers
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..roles import Role
 from ..surface.inventory import Inventory
@@ -110,7 +110,7 @@ def _verifier_findings(
     id=_ID,
     title="every producer is proved through a verifier that is proven to bite",
     stage=Stage.DEFAULT,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_producer_gate.py::test_producer_without_ledger_entry_is_red",
 )
 def check_producers(ctx: Context) -> CheckResult:

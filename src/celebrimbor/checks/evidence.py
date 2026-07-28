@@ -11,7 +11,7 @@ closes the escapes where a role is declared to obtain something (an
 code?* — ratification is a point-in-time judgment, and code moves. A row whose
 pinned shape no longer matches reverts to un-ratified.
 
-Both are Tier 1, because both need the map. Neither substitutes for the other:
+Both are obligation gates, because both need the map. Neither substitutes for the other:
 evidence catches a role that was always wrong, the pin catches a role that
 stopped being right.
 """
@@ -21,7 +21,7 @@ from __future__ import annotations
 import ast
 
 from ..context import Context
-from ..registry import check
+from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..roles import Role
 from ..structure.complexity import cyclomatic
@@ -130,7 +130,7 @@ def compute_pin(module: ModuleInfo) -> str | None:
     id=_EVIDENCE,
     title="no callable contradicts the role it is declared to have",
     stage=Stage.FAST,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_evidence_gate.py::test_verifier_that_cannot_fail_is_red",
 )
 def check_role_evidence(ctx: Context) -> CheckResult:
@@ -236,7 +236,7 @@ def _rows_to_pin(smap: SurfaceMap, inv: Inventory) -> list[tuple[SurfaceRow, Mod
     id=_PIN,
     title="every ratified row is still about the code it ratified",
     stage=Stage.FAST,
-    tier1=True,
+    family=Family.OBLIGATION,
     falsified_by="tests/negative/test_evidence_gate.py::test_shape_drift_unratifies_row",
 )
 def check_ratification_pin(ctx: Context) -> CheckResult:

@@ -19,7 +19,7 @@ celebrimbor init [--surfaces] [--root DIR] [--force]
   a `.pre-commit-config.yaml` whose one hook is `celebrimbor gate --fast`, and a
   `tests/known-bad/` directory.
 - `--surfaces` also runs role inference and writes the pre-filled, ratify-me
-  surface map (Tier 1).
+  surface map (obligation).
 - Never overwrites a config section you already have; re-running only appends
   what is missing. `--force` overwrites sections celebrimbor owns.
 

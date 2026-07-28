@@ -123,7 +123,7 @@ don't. The heavy lifting is convention:
 - The config file exists for **exceptions only**.
 
 `celebrimbor init` wires the commodity ladder with opinionated defaults;
-`celebrimbor gate --fast` is green on a fresh repo in minutes. Tier 1 is opt-in
+`celebrimbor gate --fast` is green on a fresh repo in minutes. obligation gates are opt-in
 and authored, so nothing reddens on day one. You grow into the guarantees.
 
 Convention is also what makes it resistant to hallucination in the first place:
@@ -138,8 +138,7 @@ Being honest about the edges, because a tool that oversells gets disabled:
   contradiction detectors* — they catch a verifier that provably cannot fail,
   not one that fails to catch a specific bug. The positive proof still lives in
   your tests; celebrimbor makes sure those tests exist and can bite.
-- It does **not replace your test suite, types, or linters.** It runs them (Tier
-  0) and adds the layer that makes them mean something.
+- It does **not replace your test suite, types, or linters.** It runs them (the commodity ladder) and adds the layer that makes them mean something.
 - It is **opinionated on purpose.** Omakase. If you want to configure everything,
   this is the wrong tool; the whole point is that you don't.
 

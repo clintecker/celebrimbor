@@ -1,13 +1,13 @@
 # Adopting an existing app
 
-Celebrimbor is designed to be adopted incrementally. Tier 0 goes green in
-minutes; Tier 1 you grow into. This guide walks a real, established codebase
+Celebrimbor is designed to be adopted incrementally. commodity goes green in
+minutes; obligation you grow into. This guide walks a real, established codebase
 through the whole path.
 
-## 1. Tier 0 first
+## 1. commodity first
 
 ```bash
-pip install "celebrimbor[tier0]"
+pip install "celebrimbor[commodity]"
 celebrimbor init
 celebrimbor gate --fast
 ```

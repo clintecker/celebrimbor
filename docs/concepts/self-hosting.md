@@ -1,9 +1,9 @@
 # celebrimbor on celebrimbor
 
 A quality tool that cannot pass its own gate is asking you to do something it
-will not. So celebrimbor runs its full Tier 1 — every obligation gate — against
-its own source, and ships green. This page is the receipt: what that took, what
-it caught, and where it is honestly still incomplete.
+will not. So celebrimbor runs its full obligation engine — every obligation gate
+it has — against its own source, and ships green. This page is the receipt: what
+that took, what it caught, and where it is honestly still incomplete.
 
 Nothing here is a special case. The map, the ledgers, and the config are the
 same files any adopter writes, in the same places, checked by the same code.
@@ -41,7 +41,7 @@ A shape-pin is a `blake2s` hex digest. Roughly one digest in two hundred lands
 in the characters `0`–`9` only. Written to YAML unquoted, such a pin reads back
 as an **integer**, and the loader — which demands a string — then refused the
 entire map. celebrimbor pointed at itself hit exactly this: one of 49 modules
-pinned to an all-digit hash, and the whole of Tier 1 went dark with a
+pinned to an all-digit hash, and the whole obligation engine went dark with a
 fail-closed refusal.
 
 That is the gate working — it refused rather than guessing — but it was still a

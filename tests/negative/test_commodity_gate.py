@@ -1,4 +1,4 @@
-"""Negative fixtures for the Tier 0 ladder, including the no-silent-skip scar.
+"""Negative fixtures for the commodity ladder, including the no-silent-skip scar.
 
 These shell out to real ruff and real mypy. That is slower than parsing canned
 output, and it is the point: the parsers exist to read what these tools

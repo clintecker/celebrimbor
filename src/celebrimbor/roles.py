@@ -2,7 +2,7 @@
 
 Eight roles. Each names *the kind of proof a callable of that role owes* — not
 what it does, but how it earns trust. This is the general theory the obligation
-engine runs on, and every Tier 1 gate keys on it.
+engine runs on, and every obligation gate keys on it.
 
 There is no ninth member. "Unclassified" is deliberately *not* a role, because
 a role is a claim about what proof is owed and "I don't know" is not such a

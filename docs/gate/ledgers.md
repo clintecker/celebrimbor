@@ -1,6 +1,6 @@
 # Ledgers
 
-Three Tier 1 gates read declarative ledgers and validate them for *referential
+Three obligation gates read declarative ledgers and validate them for *referential
 integrity* against the code — not merely parsing them, but checking every
 reference resolves and failing on drift. A ledger that can fall out of step with
 the code without anyone noticing is a ledger nobody trusts.

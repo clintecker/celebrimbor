@@ -1,6 +1,6 @@
 # Fixtures & markers
 
-Two Tier 0 gates keep your *test* discipline honest — because a test suite is
+Two commodity gates keep your *test* discipline honest — because a test suite is
 only trustworthy if the tests can actually fail.
 
 ## Known-bad provenance

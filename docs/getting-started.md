@@ -4,12 +4,12 @@
 
 ```bash
 pip install celebrimbor              # core (click, rich, pyyaml)
-pip install "celebrimbor[tier0]"     # + ruff, mypy, pytest, coverage
+pip install "celebrimbor[commodity]"     # + ruff, mypy, pytest, coverage
 ```
 
 Celebrimbor runs the commodity tools as subprocesses and discovers them on your
 `PATH`, so they are *your* pinned versions, not ones celebrimbor drags in. The
-`[tier0]` extra is a convenience that installs a working set.
+`[commodity]` extra is a convenience that installs a working set.
 
 Requires Python 3.11+.
 
@@ -30,7 +30,7 @@ section you already have — re-running it only appends what is missing.
 celebrimbor gate --fast
 ```
 
-Tier 0 runs lint, types, format, the structure gates, known-bad provenance, and
+commodity runs lint, types, format, the structure gates, known-bad provenance, and
 the marker grammar — targeting under ten seconds. On a conventional repo it goes
 green quickly; where it is red, each finding tells you the file, the line, and
 the fix.
@@ -53,9 +53,9 @@ celebrimbor gate           # PR: adds coverage ratchet, invariants, impact      
 celebrimbor gate --full    # merge/release: adds mutation                           (as slow as it must be)
 ```
 
-## Turn on Tier 1
+## Turn on obligation
 
-Tier 1 is the obligation engine, and it is opt-in — nothing here reddens until
+obligation is the obligation engine, and it is opt-in — nothing here reddens until
 you author the map it reads.
 
 ```bash

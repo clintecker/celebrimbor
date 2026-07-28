@@ -2,7 +2,7 @@
 
 The surface gates are the heart of the obligation engine. They rest on one
 guarantee — that celebrimbor knows *every* public callable in your application —
-and build four checks on top of it. All are Tier 1: they skip until you author
+and build four checks on top of it. All are obligation: they skip until you author
 the surface map (`celebrimbor init --surfaces`), then run against it.
 
 See [Roles & obligations](../concepts/roles.md) for the taxonomy and the
@@ -11,7 +11,7 @@ inference/ratification model. This page is the four gates.
 ## Completeness
 
 `celebrimbor.surface.completeness` is the gate everything else rests on. Every
-Tier 1 gate keys on role, so a role means nothing unless the map is *complete*.
+obligation gate keys on role, so a role means nothing unless the map is *complete*.
 
 It compares two independently-derived sets: the **AST inventory** (ground truth,
 walked from your source bytes) and the **surface map** (your ratified claims). It

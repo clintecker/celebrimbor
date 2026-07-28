@@ -4,6 +4,35 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-07-28
+
+Retire the numbered "Tier 0 / Tier 1." The two check families are now named,
+not numbered, so nothing implies a "Tier 2" that will never exist.
+
+A check's family is a **categorical pair, not a scale** — a check either needs
+an authored ledger or it doesn't — so numbering it (0, 1, …) falsely suggested
+a sequence. Contrast the run **stage** (fast/default/full), which *is* ordinal
+and keeps its scale.
+
+### Changed (breaking)
+
+- `Tier 0` → **`commodity`** (the commodity ladder) and `Tier 1` →
+  **`obligation`** (the obligation engine), everywhere:
+  - the `tier1: bool` check attribute becomes `family: Family` where
+    `Family` is `COMMODITY` | `OBLIGATION` (new, exported as `celebrimbor.Family`)
+  - `@celebrimbor.check(tier1=True)` → `@celebrimbor.check(family=Family.OBLIGATION)`
+  - the `[tier0]` install extra is renamed `[commodity]`
+  - `celebrimbor explain` marks obligation gates `[obligation]` (was `[tier1]`)
+
+  The `--fast` / `--full` flags and the `Stage` axis are unchanged.
+
+### Documentation
+
+- The gate overview page is renamed **Stages and families** and now spells out
+  why the two axes get different words: stage is a scale, family is a pair.
+- The Tier 0 page becomes **The commodity ladder**. All "Tier 0/1" prose across
+  the site, README, and docstrings is retired in favour of commodity/obligation.
+
 ## [0.5.0] — 2026-07-27
 
 Nomenclature: "tier" meant two different things. Now it means one.

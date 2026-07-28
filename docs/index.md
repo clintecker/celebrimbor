@@ -66,11 +66,11 @@ contradicting.
 
 ---
 
-## Two tiers, twenty gates
+## Two families, twenty gates
 
 <div class="grid cards" markdown>
 
--   **Tier 0 — the commodity ladder**
+-   **The commodity ladder**
 
     ---
 
@@ -82,7 +82,7 @@ contradicting.
     celebrimbor gate --fast
     ```
 
--   **Tier 1 — the obligation engine**
+-   **The obligation engine**
 
     ---
 
@@ -100,13 +100,13 @@ Every gate carries a negative fixture proving it can turn red — a gate that ha
 never been observed to fail is a blind gate, and celebrimbor does not ship them,
 including its own.
 
-[The gate: stages & tiers →](gate/stages-and-tiers.md)
+[The gate: stages & families →](gate/stages-and-families.md)
 
 ---
 
 ## Proof it's real: celebrimbor gates itself
 
-celebrimbor runs its full Tier 1 against its own source and ships green — 242
+celebrimbor runs its full obligation engine against its own source and ships green — 242
 callables classified and pinned, 14 producers proved through real verifiers, 8
 critical invariants each with a negative proof, every module import-clean.
 Turning it on found a bug in the tool, forced a dependency-injection fix on its

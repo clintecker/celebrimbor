@@ -101,7 +101,7 @@ def test_malformed_map_refuses_and_never_defaults(toy: Project) -> None:
 
 
 def test_absent_map_skips_rather_than_passes(project: Project) -> None:
-    """Tier 1 is opt-in: absent is a skip, and a skip is not a pass."""
+    """the obligation gates are opt-in: absent is a skip, and a skip is not a pass."""
     project.module("app.thing", "def do_it() -> int:\n    return 1\n")
     result = project.run(_COMPLETENESS)
     assert result.verdict is Verdict.SKIPPED

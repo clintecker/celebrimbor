@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "celebrimbor"
-version = "0.5.0"
+version = "0.6.0"
 description = "Invariant-driven design as a framework: an omakase quality harness that makes every unit carry its own falsifier."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,10 +26,10 @@ dependencies = [
 ]
 
 # The commodity ladder is shelled out, never imported. These extras exist so
-# `pip install celebrimbor[tier0]` wires the adopter's ladder in one line, but
+# `pip install celebrimbor[commodity]` wires the adopter's ladder in one line, but
 # celebrimbor itself never depends on a tool being importable.
 [project.optional-dependencies]
-tier0 = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0", "coverage[toml]>=7.6"]
+commodity = ["ruff>=0.6", "mypy>=1.11", "pytest>=8.0", "coverage[toml]>=7.6"]
 full = ["mutmut>=3.0", "pre-commit>=3.8"]
 docs = ["mkdocs-material>=9.5"]
 dev = [
@@ -100,7 +100,7 @@ testpaths = ["tests"]
 markers = [
   "negative: a fixture that must turn a specific gate red",
   "acceptance: end-to-end acceptance test from the build contract",
-  "slow: excluded from the fast tier",
+  "slow: excluded from the fast stage",
 ]
 filterwarnings = ["error"]
 
@@ -114,7 +114,7 @@ exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedE
 [tool.celebrimbor]
 source = "src/celebrimbor"
 tests = "tests"
-# celebrimbor holds itself to its own strictest tier: the import-health gate is
+# celebrimbor holds itself to its own strictest standard: the import-health gate is
 # opt-in because it imports your code, and celebrimbor's modules are import-safe
 # by design, so it turns the gate on for itself.
 import_check = true
