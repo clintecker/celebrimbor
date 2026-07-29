@@ -38,8 +38,7 @@ def test_constant_truthy_literal_is_flagged(source: str) -> None:
     "source",
     [
         "assert x is x",
-        "assert self.a is self.a",
-        "assert self.a.b is self.a.b",
+        "assert CONST is CONST",
     ],
 )
 def test_self_comparison_is_flagged(source: str) -> None:
@@ -76,6 +75,8 @@ def test_short_circuit_to_truthy_is_flagged(source: str) -> None:
         "assert True and x",  # ditto
         "assert a == a == a",  # chained comparison — left alone
         "assert x <= x",  # <=/>= can be overloaded or meet NaN; not flagged
+        "assert self.a is self.a",  # attribute access: a property may return a fresh object
+        "assert self.a.b is self.a.b",  # ditto for an attribute chain
         "assert obj.method()",  # attribute call, not a bare attribute
         "assert [*a]",  # `*a` unpacking: empty (falsy) when `a` is empty
         "assert (*a,)",  # ditto for a tuple

@@ -52,18 +52,17 @@ class Vacuity:
 
 
 def _pure_operand(node: ast.expr) -> bool:
-    """A name/attribute/constant chain — nothing that could have a side effect.
+    """A bare name or constant — the only operands whose identity is deterministic.
 
-    A call is excluded on purpose: ``f() == f()`` looks structurally identical
-    but evaluates ``f`` twice, and ``f`` may not be pure, so it is not a
-    tautology. Restricting self-comparison to pure operands is what keeps the
-    detector sound.
+    Deliberately narrow. A call is out (``f() is f()`` evaluates ``f`` twice and
+    ``f`` need not be pure). So is an *attribute*: ``obj.a`` dispatches through
+    ``__getattribute__`` — a property, descriptor, or ``__getattr__`` can return a
+    fresh object on each access, so ``obj.a is obj.a`` is not provably true and
+    ``assert obj.conn is obj.conn`` (verifying a ``cached_property`` memoises) is a
+    real, red-capable assertion, not a tautology. Subscript is out for the same
+    reason. Only ``x is x`` and ``C is C`` are genuinely reflexive for every input.
     """
-    if isinstance(node, ast.Name | ast.Constant):
-        return True
-    if isinstance(node, ast.Attribute):
-        return _pure_operand(node.value)
-    return False
+    return isinstance(node, ast.Name | ast.Constant)
 
 
 def _same_operand(left: ast.expr, right: ast.expr) -> bool:

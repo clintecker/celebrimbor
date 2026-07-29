@@ -229,7 +229,10 @@ def _new_survivors(ctx: Context, survivors: frozenset[Survivor]) -> list[Survivo
     if path.exists():
         try:
             baseline = mut.load_mutation_baseline(path)
-        except YamlError:
+        except (YamlError, ValueError):
+            # Unreadable or malformed (bad YAML, or a non-numeric version/line that
+            # trips a bare int()) — treat as no baseline and propose all survivors,
+            # rather than crash a best-effort side effect.
             baseline = mut.MutationBaseline()
         fresh = mut.new_survivors(survivors, baseline)
     else:
@@ -239,10 +242,15 @@ def _new_survivors(ctx: Context, survivors: frozenset[Survivor]) -> list[Survivo
 
 def _read_text(path: Path) -> str:
     """The file's text, or empty if it cannot be read — a scaffold still helps
-    without the snippet, and a missing file must not crash the run."""
+    without the snippet, and a missing or non-UTF-8 file must not crash the run.
+
+    ``UnicodeDecodeError`` is a ``ValueError``, not an ``OSError`` (a latin-1
+    source, or any file read under a C-locale CI), so it is caught explicitly —
+    a scaffold is not a proof, and degrading to no snippet is the fail-closed move.
+    """
     try:
         return path.read_text()
-    except OSError:
+    except (OSError, UnicodeDecodeError):
         return ""
 
 
@@ -376,6 +384,7 @@ def explain() -> None:
 
 _POLL_S = 0.4
 _SETTLE_S = 0.4
+_MAX_SETTLE = 20  # ~8s cap, so a continuously-written file cannot livelock the wait
 
 
 def _sleep(seconds: float) -> None:
@@ -410,9 +419,22 @@ def _candidate_files(config: Any) -> list[Path]:
 
 
 def _snapshot(config: Any) -> dict[Path, float]:
-    """The current ``{repo-relative path: mtime}`` of every candidate file."""
+    """The current ``{repo-relative path: mtime}`` of every candidate file.
+
+    Enumeration and ``stat`` are separate passes, so a file can vanish in between
+    (a save-over, a branch switch, a churning temp file) — most likely during
+    ``_settle``, which re-snapshots repeatedly while writes are in flight. A
+    vanished or unreadable file is simply absent from this poll, not a crash; the
+    next poll sees it if it returns.
+    """
     root = config.root
-    return {p.relative_to(root): p.stat().st_mtime for p in _candidate_files(config)}
+    snap: dict[Path, float] = {}
+    for p in _candidate_files(config):
+        try:
+            snap[p.relative_to(root)] = p.stat().st_mtime
+        except OSError:
+            continue
+    return snap
 
 
 def _settle(config: Any, previous: Snapshot, current: dict[Path, float]) -> dict[Path, float]:
@@ -424,12 +446,16 @@ def _settle(config: Any, previous: Snapshot, current: dict[Path, float]) -> dict
     """
     from .watch import changed
 
-    while changed(previous, current):
+    for _ in range(_MAX_SETTLE):
+        if not changed(previous, current):
+            break
         _sleep(_SETTLE_S)
         latest = _snapshot(config)
         if latest == current:
             break
         current = latest
+    # If the set never settled (a file being written continuously), fall through
+    # and re-run anyway on the latest snapshot — a bounded wait, never a livelock.
     return current
 
 

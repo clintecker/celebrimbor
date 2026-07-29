@@ -136,15 +136,15 @@ def _truthy_literal(node: ast.expr | None) -> bool:
     if isinstance(node, ast.Constant):
         return bool(node.value)
     if isinstance(node, ast.List | ast.Set | ast.Tuple):
-        # Non-empty *and* every element is a real expr. A ``*a`` element parses
-        # to a Starred node inside non-empty ``elts`` yet leaves the container
-        # empty (falsy) when ``a`` is empty, so ``[*a]`` is not unconditionally
-        # truthy.
-        return bool(node.elts) and all(not isinstance(e, ast.Starred) for e in node.elts)
+        # Unconditionally truthy iff at least one element is a *guaranteed* (non-
+        # ``*splat``) member: that one element makes the container non-empty for
+        # every input. ``[*a]`` (all splat) can be empty and is not truthy, but
+        # ``[1, *a]`` always has its ``1``, so it is.
+        return any(not isinstance(e, ast.Starred) for e in node.elts)
     if isinstance(node, ast.Dict):
-        # A ``None`` key marks ``**a`` unpacking: ``{**a}`` has ``keys=[None]``,
-        # non-empty but empty (falsy) when ``a`` is. Require every key present.
-        return bool(node.keys) and all(k is not None for k in node.keys)
+        # A ``None`` key marks ``**a`` unpacking: ``{**a}`` can be empty. A single
+        # literal key (``{"k": v, **a}``) guarantees one entry, so it is truthy.
+        return any(k is not None for k in node.keys)
     return False
 
 

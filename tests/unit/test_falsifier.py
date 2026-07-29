@@ -16,6 +16,21 @@ from tests.conftest import Project
 
 _SRC = "def place_order(order):\n    return order.customer and order.total\n"
 
+# Module-level code + a class with two methods, so a snippet test can tell
+# "narrowed to the enclosing method" apart from "returned the whole file".
+_MODULE = (
+    "import os\n"  # line 1
+    "\n"  # 2
+    "TOP = 1\n"  # 3
+    "\n"  # 4
+    "class Orders:\n"  # 5
+    "    def place(self, order):\n"  # 6
+    "        return order.customer and order.total\n"  # 7  <- the mutated line
+    "\n"  # 8
+    "    def cancel(self, order):\n"  # 9
+    "        return order.cancelled\n"  # 10
+)
+
 
 # --- the pure builder -----------------------------------------------------
 
@@ -34,13 +49,23 @@ def test_slugify_distinguishes_operators_at_the_same_line() -> None:
     assert slugify("src/app.py:42:+->-") != slugify("src/app.py:42:+->*")
 
 
-def test_scaffold_extracts_the_enclosing_function() -> None:
+def test_scaffold_reports_identity_stub_and_recipe() -> None:
     proposal = scaffold(Survivor("src/app/orders.py", 2, "and->or"), _SRC)
     assert proposal.identity == "src/app/orders.py:2:and->or"
-    # the smallest def around the mutated line, not the whole file
-    assert "def place_order(order):" in proposal.snippet
     assert "and->or" in proposal.stub
     assert "src/app/orders.py:2" in proposal.recipe
+
+
+def test_scaffold_narrows_to_the_smallest_enclosing_def() -> None:
+    # The mutated line is inside Orders.place; the snippet must be exactly that
+    # method — not the whole module, not the enclosing class, not the sibling
+    # method. (A fixture that is a single top-level function cannot tell narrowing
+    # apart from dumping the whole file, so this uses nested defs on purpose.)
+    proposal = scaffold(Survivor("src/app/orders.py", 7, "and->or"), _MODULE)
+    assert "def place(self, order):" in proposal.snippet
+    assert "def cancel" not in proposal.snippet  # sibling method excluded
+    assert "import os" not in proposal.snippet  # module level excluded
+    assert "class Orders" not in proposal.snippet  # enclosing class excluded
 
 
 def test_scaffold_is_deterministic() -> None:
@@ -54,9 +79,10 @@ def test_render_marks_the_scaffold_not_a_proof() -> None:
 
 
 def test_scaffold_falls_back_to_a_window_on_unparseable_source() -> None:
-    # A syntax error must not crash the scaffolder — it still locates the line.
+    # A syntax error must not crash the scaffolder — it still locates the line by
+    # falling back to a window, and that window must actually contain line 2.
     proposal = scaffold(Survivor("a.py", 2, "x"), "def broken(:\n    junk here\n    more\n")
-    assert proposal.snippet  # a window, not an exception
+    assert "junk here" in proposal.snippet  # the window is centered on the mutated line
 
 
 # --- the `gate --propose` side effect -------------------------------------
@@ -76,6 +102,22 @@ def test_propose_writes_one_scaffold_per_survivor(project: Project) -> None:
     assert "def place_order(order):" in text
     # A scaffold lives outside source/ and tests/, so no gate ever scans it.
     assert proposals[0].parts[-3:-1] == (".celebrimbor", "proposals")
+
+
+def test_propose_writes_distinct_files_for_same_line_mutants(project: Project) -> None:
+    # Two mutants at one file:line must yield two scaffolds, not one overwriting
+    # the other — the integration path where the slug collision actually bit.
+    project.write("src/app/m.py", "def f(a, b):\n    return a + b\n")
+    ctx = project.context(stage=Stage.FULL)
+    ctx.memo(
+        "ratchet.survivors",
+        lambda: frozenset(
+            {Survivor("src/app/m.py", 2, "+->-"), Survivor("src/app/m.py", 2, "+->*")}
+        ),
+    )
+    _propose(ctx)
+    proposals = sorted((project.root / ".celebrimbor" / "proposals").glob("*.md"))
+    assert len(proposals) == 2
 
 
 def test_propose_is_inert_without_a_survivor_source(project: Project) -> None:
