@@ -84,3 +84,14 @@ invariants:
     enforced_by: checks.surface:check_surface_completeness
     critical: true
     negative_proof: tests/negative/test_surface_gate.py::test_malformed_map_refuses_and_never_defaults
+
+  cli-exit-reflects-verdict:
+    statement: >-
+      `celebrimbor gate` exits non-zero when the gate is red and zero only when
+      every check that ran proved its claim. The CLI is the adapter between the
+      report and the process, and a CLI that printed a red report but exited 0
+      would report success over a failing gate — the silent pass the whole
+      harness exists to prevent.
+    enforced_by: cli:gate
+    critical: true
+    negative_proof: tests/negative/test_cli_gate.py::test_red_gate_exits_nonzero
