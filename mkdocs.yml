@@ -91,6 +91,9 @@ nav:
   - Reference:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md
+  - Roadmap:
+      - Where celebrimbor is going: roadmap.md
+      - "Design: the agent-acceptance gate": design/agent-acceptance-gate.md
   - Changelog: changelog.md
 
 extra:
