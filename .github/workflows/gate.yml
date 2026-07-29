@@ -26,13 +26,23 @@ jobs:
         # on the first run and enforce thereafter, and a missing tool is a
         # hard failure rather than a skip.
         #
-        # The impact gate diffs a *proposed change*, so it wants the pull
-        # request's merge base. On a direct push to main there is no proposal to
-        # re-litigate — the PR already gated it — so we diff against HEAD (an
-        # empty diff, impact passes) while every other Tier 1 gate still runs.
+        # The impact gate diffs a change against a base. On a PR that base is the
+        # merge base. On a push to main it is the commit main was at *before* the
+        # push (`github.event.before`), so the gate sees exactly what this push
+        # introduced — a release, a hotfix, anything committed straight to main is
+        # impact-checked too. (It used to diff HEAD here — an empty diff — which
+        # made the impact gate a silent no-op on the whole release path and let
+        # policy-role changes reach main ungoverned. It only ever fired on PRs.)
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             celebrimbor gate --diff-base "origin/${{ github.base_ref }}"
           else
-            celebrimbor gate --diff-base HEAD
+            base="${{ github.event.before }}"
+            # Zero SHA on branch creation / forced history: fall back to the parent
+            # commit. If even that cannot resolve, the impact gate REFUSES (red),
+            # which is the correct fail-closed answer to "I cannot tell what changed".
+            if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then
+              base="HEAD^"
+            fi
+            celebrimbor gate --diff-base "$base"
           fi
