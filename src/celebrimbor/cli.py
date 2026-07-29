@@ -19,9 +19,11 @@ from typing import TYPE_CHECKING, Any
 import click
 
 from . import __version__
-from .result import Stage
+from .result import CheckResult, Stage
 
 if TYPE_CHECKING:
+    from .context import Context
+    from .ratchets.mutation import Survivor
     from .watch import Snapshot
 
 
@@ -42,6 +44,7 @@ class GateOptions:
     verbose: bool = False
     plain: bool = False
     format: str = "human"
+    propose: bool = False
     update_baselines: bool = False
     reason: str | None = None
 
@@ -106,6 +109,11 @@ def init(surfaces: bool, root: Path | None, force: bool) -> None:
     help="human (default), plain (no colour), or agent (a JSON work-item verdict).",
 )
 @click.option(
+    "--propose",
+    is_flag=True,
+    help="Scaffold a falsifier for each surviving mutant (a TODO, never a proof).",
+)
+@click.option(
     "--update-baselines",
     is_flag=True,
     help="Re-baseline ratchets. Requires --reason and a pinned environment.",
@@ -147,6 +155,12 @@ def gate(**options: Any) -> None:
         raise click.ClickException(str(exc)) from exc
     report = run(ctx)
 
+    # A run side effect, like --update-baselines: write a falsifier scaffold per
+    # surviving mutant. It writes only to the proposals scratch dir, touches no
+    # ledger, and never changes the verdict — a scaffold is a TODO, not a proof.
+    if opts.propose:
+        _propose(ctx)
+
     # `--plain` is a back-compatible alias for `--format=plain`; an explicit
     # `--format` wins, and a bare `--plain` still selects plain.
     fmt = opts.format if opts.format != "human" else ("plain" if opts.plain else "human")
@@ -166,6 +180,70 @@ def gate(**options: Any) -> None:
 
         render(report, verbose=opts.verbose)
     sys.exit(report.exit_code)
+
+
+def _propose(ctx: Context) -> None:
+    """Write a falsifier scaffold for each new surviving mutant.
+
+    The adapter half of the falsifier feature: it reaches for the survivor source,
+    reads each named file, and writes to the proposals scratch directory. The
+    scaffolding itself is pure (:mod:`celebrimbor.falsifier`). Nothing here ratifies
+    anything or writes a ledger, so a scaffold can never become a proof.
+    """
+    from . import falsifier
+    from .checks.ratchets import _acquire_survivors
+
+    survivors = _acquire_survivors(ctx)
+    if isinstance(survivors, CheckResult):
+        # No source (the usual case) or a broken one — either way, nothing to
+        # propose. Surface the reason; write nothing.
+        click.echo(f"nothing to propose: {survivors.reason or survivors.summary}")
+        return
+    targets = _new_survivors(ctx, survivors)
+    if not targets:
+        click.echo("nothing to propose: no new surviving mutants")
+        return
+
+    out_dir = ctx.config.state_dir / "proposals"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for survivor in targets:
+        source = _read_text(ctx.config.root / survivor.file)
+        proposal = falsifier.scaffold(survivor, source)
+        dest = out_dir / f"{proposal.slug}.md"
+        dest.write_text(falsifier.render(proposal))
+        click.echo(
+            f"proposed falsifier for {survivor.identity} -> {dest.relative_to(ctx.config.root)}"
+        )
+
+
+def _new_survivors(ctx: Context, survivors: frozenset[Survivor]) -> list[Survivor]:
+    """The survivors not already accepted in the baseline, sorted for determinism.
+
+    With no baseline every current survivor is new. Sorting by identity keeps the
+    proposal order stable across runs.
+    """
+    from .ratchets import mutation as mut
+    from .yamlio import YamlError
+
+    path = ctx.config.mutation_baseline_path
+    if path.exists():
+        try:
+            baseline = mut.load_mutation_baseline(path)
+        except YamlError:
+            baseline = mut.MutationBaseline()
+        fresh = mut.new_survivors(survivors, baseline)
+    else:
+        fresh = list(survivors)
+    return sorted(fresh, key=lambda s: s.identity)
+
+
+def _read_text(path: Path) -> str:
+    """The file's text, or empty if it cannot be read — a scaffold still helps
+    without the snippet, and a missing file must not crash the run."""
+    try:
+        return path.read_text()
+    except OSError:
+        return ""
 
 
 @main.command()

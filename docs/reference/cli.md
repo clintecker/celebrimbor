@@ -41,6 +41,7 @@ celebrimbor gate [--fast | --full] [OPTIONS]
 | `-v`, `--verbose` | show hints, skips, and full findings |
 | `--format FMT` | `human` (default), `plain` (no color), or `agent` (a JSON work-item verdict) |
 | `--plain` | back-compatible alias for `--format=plain` |
+| `--propose` | scaffold a falsifier for each surviving mutant (a TODO, never a proof) |
 | `--update-baselines` | re-baseline the coverage, mutation, **and structure** ratchets (requires `--reason`, pinned env) |
 | `--reason TEXT` | why a baseline is being moved — recorded |
 
@@ -111,6 +112,28 @@ Two properties are load-bearing and hold by construction:
 `SKIPPED` never becomes a work item — a skip is not a TODO — but it is listed
 under `skipped` so an agent cannot silently benefit from an obligation nobody
 opted into.
+
+### `--propose` — scaffold a falsifier for each surviving mutant
+
+A surviving mutant is the missing falsifier made concrete: a change to the code
+that *no test distinguishes from the real thing*, so the test that would kill it
+is exactly the negative proof the code is missing. `--propose` turns each new
+survivor into a human-completable scaffold — the mutant's identity, the enclosing
+code, a stub test, and the recipe to confirm the finished test actually kills the
+mutant — written to `.celebrimbor/proposals/`.
+
+```bash
+$ celebrimbor gate --full --propose
+```
+
+It is deterministic (no LLM, no tool run — it reads the survivor set the mutation
+gate already sources) and it needs a survivor source (`mutation_survivors`); with
+none, it reports *nothing to propose* and writes nothing.
+
+A scaffold is **never a proof**. It is a dated TODO: it lands in a scratch
+directory no gate reads, it is never ratified, and its presence changes no
+verdict. Generation moves the blank page — completing the test and ratifying it
+is what moves the gate.
 
 `--version` and `-h` / `--help` are available on every command.
 
