@@ -24,6 +24,7 @@ from collections.abc import Iterable
 CHECK_MODULES: tuple[str, ...] = (
     "meta",
     "structure",
+    "vacuity",
     "surface",
     "knownbad",
     "markers",

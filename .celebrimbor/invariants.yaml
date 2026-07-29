@@ -95,3 +95,13 @@ invariants:
     enforced_by: cli:gate
     critical: true
     negative_proof: tests/negative/test_cli_gate.py::test_red_gate_exits_nonzero
+
+  no-assertion-is-a-tautology:
+    statement: >-
+      No assertion in the codebase is a tautology — true regardless of the code
+      under test. An assertion that holds for every input proves nothing, and a
+      suite built from such assertions manufactures confidence rather than earning
+      it. The vacuity gate refuses them.
+    enforced_by: checks.vacuity:check_vacuity
+    critical: true
+    negative_proof: tests/negative/test_vacuity_gate.py::test_tautological_assert_is_red
