@@ -24,7 +24,7 @@ from .result import Stage
 
 @dataclass(frozen=True, slots=True)
 class GateOptions:
-    """The seven things `gate` can be told to do.
+    """The things `gate` can be told to do, as one object.
 
     A named concept rather than seven positional parameters, which is exactly
     the remedy celebrimbor's own complexity gate suggests for a long parameter
@@ -38,6 +38,7 @@ class GateOptions:
     diff_base: str | None = None
     verbose: bool = False
     plain: bool = False
+    format: str = "human"
     update_baselines: bool = False
     reason: str | None = None
 
@@ -93,7 +94,14 @@ def init(surfaces: bool, root: Path | None, force: bool) -> None:
 )
 @click.option("--diff-base", default=None, help="Git ref the impact gate diffs against.")
 @click.option("-v", "--verbose", is_flag=True, help="Show hints, skips and full findings.")
-@click.option("--plain", is_flag=True, help="No colour; for logs and CI annotations.")
+@click.option("--plain", is_flag=True, help="Alias for --format=plain.")
+@click.option(
+    "--format",
+    "format",
+    type=click.Choice(["human", "plain", "agent"]),
+    default="human",
+    help="human (default), plain (no colour), or agent (a JSON work-item verdict).",
+)
 @click.option(
     "--update-baselines",
     is_flag=True,
@@ -110,7 +118,6 @@ def gate(**options: Any) -> None:
     """
     from .checks import CheckModuleError, load_check_modules
     from .context import Context
-    from .reporting import render, render_plain
     from .runner import load_builtin_checks, run
 
     opts = GateOptions(**options)
@@ -137,9 +144,23 @@ def gate(**options: Any) -> None:
         raise click.ClickException(str(exc)) from exc
     report = run(ctx)
 
-    if opts.plain:
+    # `--plain` is a back-compatible alias for `--format=plain`; an explicit
+    # `--format` wins, and a bare `--plain` still selects plain.
+    fmt = opts.format if opts.format != "human" else ("plain" if opts.plain else "human")
+
+    # Emitters are imported only when chosen, so the fast stage never pays the
+    # import cost of a format it did not request.
+    if fmt == "agent":
+        from .agent import render_agent
+
+        click.echo(render_agent(report))
+    elif fmt == "plain":
+        from .reporting import render_plain
+
         click.echo(render_plain(report))
     else:
+        from .reporting import render
+
         render(report, verbose=opts.verbose)
     sys.exit(report.exit_code)
 

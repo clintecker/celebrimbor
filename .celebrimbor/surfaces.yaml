@@ -35,6 +35,12 @@ modules:
     role: adapter
     status: ratified
     pin: "07ef3a768c89"
+  agent:
+    role: pure
+    status: ratified
+    pin: "ec1dca72a48a"
+    overrides:
+      render_agent: pure
   celebrimbor:
     role: orchestrator
     status: ratified
@@ -109,7 +115,7 @@ modules:
   cli:
     role: adapter
     status: ratified
-    pin: "2fc2ca0a2661"
+    pin: "5d5a927ba480"
     overrides:
       explain: presenter
       main: pure
