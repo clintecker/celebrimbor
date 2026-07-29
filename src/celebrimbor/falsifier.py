@@ -25,6 +25,7 @@ Two things it deliberately is **not**:
 from __future__ import annotations
 
 import ast
+import hashlib
 from dataclasses import dataclass
 
 from .ratchets.mutation import Survivor
@@ -54,19 +55,26 @@ class Proposal:
 
 
 def slugify(identity: str) -> str:
-    """A stable, filesystem-safe stem for ``identity``.
+    """A stable, filesystem-safe, *collision-free* stem for ``identity``.
 
-    Deterministic: every non-alphanumeric run collapses to a single ``-``, so the
-    same survivor always maps to the same filename and re-proposing overwrites
-    rather than duplicating.
+    Deterministic: the same survivor always maps to the same filename, so
+    re-proposing overwrites rather than duplicating. The readable stem alone is
+    not enough — an all-punctuation operator (``+->-``) collapses to nothing, so
+    two distinct mutants at the same ``file:line`` (``+->-`` and ``+->*``) would
+    slugify identically and the second scaffold would silently overwrite the
+    first, dropping a real falsifier. A short hash of the *whole* identity is
+    appended so distinct identities never collide, while the readable part keeps
+    the filename legible.
     """
     out: list[str] = []
     for ch in identity:
         out.append(ch.lower() if ch.isalnum() else "-")
-    slug = "".join(out)
-    while "--" in slug:
-        slug = slug.replace("--", "-")
-    return slug.strip("-")
+    readable = "".join(out)
+    while "--" in readable:
+        readable = readable.replace("--", "-")
+    readable = readable.strip("-")
+    digest = hashlib.blake2s(identity.encode()).hexdigest()[:6]
+    return f"{readable}-{digest}" if readable else digest
 
 
 def _enclosing_source(source: str, line: int) -> str:

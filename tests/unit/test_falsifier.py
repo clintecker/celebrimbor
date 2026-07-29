@@ -22,9 +22,16 @@ _SRC = "def place_order(order):\n    return order.customer and order.total\n"
 
 def test_slugify_is_stable_and_filesystem_safe() -> None:
     slug = slugify("src/app/orders.py:42:and->or")
-    assert slug == "src-app-orders-py-42-and-or"
+    assert slug.startswith("src-app-orders-py-42-and-or-")  # readable stem + hash
     assert "/" not in slug and ":" not in slug
     assert slugify("src/app/orders.py:42:and->or") == slug  # deterministic
+
+
+def test_slugify_distinguishes_operators_at_the_same_line() -> None:
+    # All-punctuation operators collapse away in the readable stem; the identity
+    # hash must still keep two mutants at one file:line from colliding — else the
+    # second scaffold silently overwrites the first, dropping a real falsifier.
+    assert slugify("src/app.py:42:+->-") != slugify("src/app.py:42:+->*")
 
 
 def test_scaffold_extracts_the_enclosing_function() -> None:
