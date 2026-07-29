@@ -107,6 +107,13 @@ class Config:
     formatter: str = "ruff-format"
     mutation_tool: str = "mutmut"
 
+    mutation_survivors: str = ""
+    """An importable ``module:function`` returning the current surviving mutants
+    as a ``frozenset[celebrimbor.Survivor]`` — an app's own deterministic mutation
+    set, in place of running the ``mutation_tool``. Called in production so
+    celebrimbor's survivor-identity ratchet (baseline, compare, reason-gated
+    update) gates it. Empty means the mutation gate has no source and skips."""
+
     import_check: bool = False
     """Opt in to the runtime import-health check. Off by default because it is
     the one check that *imports* the application (everything else is AST-only),
@@ -317,6 +324,7 @@ _PARSERS: dict[str, Callable[[Any, str], Any]] = {
     "known_bad": _as_str,
     "formatter": _as_str,
     "mutation_tool": _as_str,
+    "mutation_survivors": _as_str,
     "trusted_environment": _as_bool,
     "pinned_environment": _as_bool,
     "import_check": _as_bool,

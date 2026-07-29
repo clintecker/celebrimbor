@@ -49,6 +49,12 @@ Both default to a CI signal (`CI=1`, or the usual CI env vars, or
 # App @check modules the CLI imports so `celebrimbor gate` runs your gates too.
 check_modules = ["myapp.quality_checks"]
 
+[tool.celebrimbor]
+# An app's own deterministic mutation set, in place of running mutmut. The
+# callable returns frozenset[celebrimbor.Survivor]; the survivor-identity ratchet
+# gates it (see gate/ratchets).
+mutation_survivors = "myapp.mutation:survivors"
+
 # A domain linter that proves its own tests/known-bad/ fixtures (beyond ruff/mypy).
 # Either a subprocess `command` (with {file}) or an in-process `callable`
 # ("module:function" returning the diagnostics); `match` is "exact" or "substring".
@@ -58,9 +64,11 @@ match = "substring"                              # for phrase-emitting linters
 ```
 
 `check_modules` is [Writing custom checks](../guides/custom-checks.md);
-`known_bad_checkers` is [Fixtures & markers](../gate/fixtures.md). A named module
-that will not import, or a checker command that will not run, is a hard
-fail-closed error — never a silently smaller gate.
+`known_bad_checkers` is [Fixtures & markers](../gate/fixtures.md);
+`mutation_survivors` is [Ratchets](../gate/ratchets.md). Each is the same kind of
+seam — you supply the tooling, celebrimbor runs it under its own guarantees — and
+a source that will not import or run is a hard fail-closed error, never a
+silently smaller gate.
 
 ## Ledger paths
 

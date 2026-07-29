@@ -262,3 +262,63 @@ def test_new_survivor_with_same_count_is_red(project: Project) -> None:
     assert result.verdict is Verdict.FAIL
     assert "mutation-new-survivor" in codes(result)
     assert any("b.py:5" in f.message for f in result.findings)
+
+
+# --- app-supplied deterministic survivor set (issue #12) ------------------
+
+_MUT = "celebrimbor.mutation"
+_SRC = "tests.mutation_survivors_fixture:survivors"
+
+
+def _ci_with_survivors(project: Project, ref: str) -> Project:
+    project.write(
+        "pyproject.toml",
+        f"""
+        [project]
+        name = "fixture"
+        version = "0.0.0"
+
+        [tool.celebrimbor]
+        source = "src"
+        trusted_environment = true
+        pinned_environment = true
+        mutation_survivors = "{ref}"
+        """,
+    )
+    project.surfaces("version: 1\nmodules: {}\n")
+    return project
+
+
+def test_app_supplied_survivors_gate_the_ratchet(project: Project) -> None:
+    """An app's own survivor set (not mutmut) runs through the identity ratchet:
+    the fixture emits a survivor absent from the baseline, so it reddens."""
+    _ci_with_survivors(project, _SRC)
+    project.write(
+        ".celebrimbor/baselines/mutation.yaml",
+        "version: 1\nenvironment: ci\nsurvivors:\n  - src/app/a.py:10:and->or\n",
+    )
+    result = run_spec(project.spec(_MUT), project.context(stage=Stage.FULL))
+    assert result.verdict is Verdict.FAIL
+    assert any("b.py:5:True->False" in f.message for f in result.findings)
+
+
+def test_app_supplied_survivors_baseline_on_first_run(project: Project) -> None:
+    """First run in the pinned env records the app's set and passes."""
+    _ci_with_survivors(project, _SRC)
+    assert run_spec(project.spec(_MUT), project.context(stage=Stage.FULL)).verdict is Verdict.PASS
+
+
+def test_broken_mutation_survivors_callable_refuses(project: Project) -> None:
+    """A configured source that will not import is fail-closed, never a pass."""
+    _ci_with_survivors(project, "no.such.module:survivors")
+    assert (
+        run_spec(project.spec(_MUT), project.context(stage=Stage.FULL)).verdict is Verdict.REFUSED
+    )
+
+
+def test_no_mutation_source_skips(project: Project) -> None:
+    """No tool run wired and no app source: opt-out skip, not a pass."""
+    _ci_project(project)
+    result = run_spec(project.spec(_MUT), project.context(stage=Stage.FULL))
+    assert result.verdict is Verdict.SKIPPED
+    assert not result.proved

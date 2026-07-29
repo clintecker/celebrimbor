@@ -173,6 +173,12 @@ suppressed test must cite one of those limitations, so a known gap can't be
 confused with a shrug — retiring the limitation half of a hand-rolled marker
 grammar.
 
+**Feed your own mutation set.** If you mutate deterministically rather than with
+mutmut, supply the surviving mutants and let celebrimbor's identity ratchet gate
+them (`mutation_survivors = "myapp.mutation:survivors"` — see
+[Ratchets](../gate/ratchets.md#mutation-survivor-identity-not-count)) — retiring a
+home-grown mutation script.
+
 The payoff: one `celebrimbor gate` command runs your domain checks, your fixture
 provenance, and your invariants alongside the builtins, all under the same
 fail-closed, no-check-escapes guarantee — and the second harness is deleted.

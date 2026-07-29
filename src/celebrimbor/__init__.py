@@ -34,7 +34,10 @@ if TYPE_CHECKING:
 
     from .context import Context
 
-__version__ = "0.10.1"
+__version__ = "0.11.0"
+
+if TYPE_CHECKING:
+    from .ratchets.mutation import Survivor
 
 __all__ = [
     "CheckResult",
@@ -42,12 +45,24 @@ __all__ = [
     "Finding",
     "GateReport",
     "Stage",
+    "Survivor",
     "Unproven",
     "Verdict",
     "__version__",
     "check",
     "gate",
 ]
+
+
+def __getattr__(name: str) -> object:
+    # `Survivor` is exposed lazily: apps supplying a mutation survivor set
+    # (`mutation_survivors` config) import it, but its module pulls in yaml, and
+    # this package is kept yaml-free at import so the fast stage stays cheap.
+    if name == "Survivor":
+        from .ratchets.mutation import Survivor
+
+        return Survivor
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def gate(

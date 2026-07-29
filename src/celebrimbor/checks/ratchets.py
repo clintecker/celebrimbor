@@ -167,17 +167,67 @@ def _update_coverage(
 # ---------------------------------------------------------------------------
 
 
-def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | str:
-    """Current surviving mutants, or a string explaining why we could not.
+def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | CheckResult:
+    """Current surviving mutants, or a CheckResult saying why we could not.
 
-    Injectable via the ``ratchet.survivors`` memo for tests; in production the
-    gate reads the mutation tool's results. Mutation is genuinely slow, which
-    is why this whole gate is merge-stage only.
+    Three sources, in order: the ``ratchet.survivors`` memo (tests inject it);
+    an app-supplied ``mutation_survivors`` callable (production — an app's own
+    deterministic mutation set, in place of a tool run); otherwise no source, so
+    the gate skips. Mutation is genuinely slow, which is why it is merge-stage
+    only.
     """
     memoized = ctx._memo.get("ratchet.survivors")
     if memoized is not None:
         return memoized  # type: ignore[return-value]
-    return "mutation acquisition requires the configured mutation tool; not yet wired for auto-run"
+    if ctx.config.mutation_survivors:
+        return _survivors_from_callable(ctx.config.mutation_survivors)
+    return CheckResult.skipped(
+        _MUTATION,
+        'no mutation survivor source: set `mutation_survivors = "module:function"` for an '
+        "app-supplied deterministic set (auto-running the mutation tool is not yet wired).",
+    )
+
+
+def _survivors_from_callable(ref: str) -> frozenset[mut.Survivor] | CheckResult:
+    """Import ``module:function`` and call it for the current survivor set.
+
+    Fail closed: a malformed ref, a module/attribute that will not import, a
+    callable that raises or does not produce a set of :class:`~mut.Survivor` is
+    REFUSED — never a quiet pass, because the ratchet's set arithmetic is only
+    sound over real Survivor instances.
+    """
+    module_name, sep, func_name = ref.partition(":")
+    if not sep or not func_name:
+        return CheckResult.refused(
+            _MUTATION,
+            f"mutation_survivors {ref!r} is not in module:function form",
+            reason="set it to an importable callable, e.g. `myapp.mutation:survivors`",
+        )
+    import importlib
+
+    try:
+        func = getattr(importlib.import_module(module_name), func_name)
+    except (ImportError, AttributeError) as exc:
+        return CheckResult.refused(
+            _MUTATION,
+            f"mutation_survivors {ref!r} could not be imported",
+            reason=f"{type(exc).__name__}: {exc}",
+        )
+    try:
+        survivors = frozenset(func())
+    except Exception as exc:  # a broken source is unverifiable, not a pass
+        return CheckResult.refused(
+            _MUTATION,
+            f"mutation_survivors {ref!r} failed to produce a survivor set",
+            reason=f"{type(exc).__name__}: {exc}",
+        )
+    if not all(isinstance(s, mut.Survivor) for s in survivors):
+        return CheckResult.refused(
+            _MUTATION,
+            f"mutation_survivors {ref!r} did not return Survivor objects",
+            reason="the callable must return an iterable of celebrimbor.Survivor",
+        )
+    return survivors
 
 
 @check(
@@ -190,8 +240,8 @@ def _acquire_survivors(ctx: Context) -> frozenset[mut.Survivor] | str:
 def check_mutation(ctx: Context) -> CheckResult:
     """The mutation ratchet. A *new* survivor is red even if the count is flat."""
     current = _acquire_survivors(ctx)
-    if isinstance(current, str):
-        return CheckResult.skipped(_MUTATION, current)
+    if isinstance(current, CheckResult):
+        return current
 
     path = ctx.config.mutation_baseline_path
     if not path.exists():

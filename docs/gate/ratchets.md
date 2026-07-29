@@ -83,8 +83,22 @@ survivors:
 
 Accepting a *new* survivor into the baseline is admitting the suite got weaker
 somewhere, so `--update-baselines` requires a reason. Dropping resolved survivors
-is always free. The mutation runner itself is configurable (`mutation_tool`,
-default `mutmut`).
+is always free.
+
+The ratchet is separate from *where the survivors come from*. `mutmut` is the
+default runner (`mutation_tool`), but an app with its own deterministic mutation
+— a curated AST-operator set over its policy modules, say — can supply the
+survivors directly and skip the tool entirely:
+
+```toml
+[tool.celebrimbor]
+mutation_survivors = "myapp.mutation:survivors"   # -> frozenset[celebrimbor.Survivor]
+```
+
+celebrimbor imports and calls it (`from celebrimbor import Survivor` to build the
+set), then runs the *same* survivor-identity ratchet over the result — baseline,
+compare, reason-gated update. A source that will not import, or returns something
+other than `Survivor`s, is refused (red), never a quiet pass.
 
 Why identity beats count — same size, different members, and only the second run
 is a regression:
