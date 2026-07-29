@@ -4,7 +4,7 @@
 celebrimbor [COMMAND] [OPTIONS]
 ```
 
-Four commands. The whole product surface is deliberately small — a CLI that grows
+Five commands. The whole product surface is deliberately small — a CLI that grows
 subcommands is one that has started asking you to learn it.
 
 ## `celebrimbor init`
@@ -113,6 +113,56 @@ under `skipped` so an agent cannot silently benefit from an obligation nobody
 opted into.
 
 `--version` and `-h` / `--help` are available on every command.
+
+## `celebrimbor watch`
+
+Re-run the fast gate whenever a relevant file changes — the inner-loop companion
+to `gate --fast`, so drift surfaces the instant you introduce it instead of two
+minutes into CI.
+
+```bash
+celebrimbor watch [--root DIR]
+```
+
+| Option | Effect |
+|---|---|
+| `--root DIR` | project root (default: cwd) |
+
+It watches, until you press `Ctrl-C`, for changes to the files a fast gate
+actually depends on:
+
+- `.py` files under `source` and `tests`,
+- `celebrimbor.toml` and `pyproject.toml`,
+- any `.celebrimbor/*.yaml` ledger.
+
+Everything else — a README edit, a build artifact, a compiled `.pyc` — is
+ignored, and a change is debounced until the file set stops moving, so one save
+triggers exactly one run.
+
+Each re-run is a **full cold fast-stage run, byte-identical to `gate --fast`**.
+That is the whole safety story: watch does not track a cached "green," so it can
+never claim green over a red gate — it re-runs the real gate and prints the real
+report, every time. There is no incremental engine to trust and no state to go
+stale. (Warm/incremental re-runs are a later, separate change; this slice is
+deliberately a cold re-run because a cold re-run is trivially identical to the
+gate it stands in for.)
+
+```console
+$ celebrimbor watch
+celebrimbor watch — /path/to/project
+re-running the fast gate on every change; Ctrl-C to stop.
+
+  ✓ celebrimbor.lint            ruff reports no violations
+  …
+  GREEN   9 proved   0 red   4 skipped   0.28s
+
+changed: src/app/core.py
+
+  ✗ celebrimbor.format          1 file(s) need formatting
+  RED   7 proved   1 failed   0 refused   0.31s
+^C
+celebrimbor watch — stopped.
+```
 
 ## `celebrimbor ratify`
 
