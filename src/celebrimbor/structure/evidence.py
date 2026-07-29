@@ -135,9 +135,17 @@ def _truthy_literal(node: ast.expr | None) -> bool:
         return False
     if isinstance(node, ast.Constant):
         return bool(node.value)
-    return isinstance(node, ast.List | ast.Dict | ast.Set | ast.Tuple) and bool(
-        getattr(node, "elts", None) or getattr(node, "keys", None)
-    )
+    if isinstance(node, ast.List | ast.Set | ast.Tuple):
+        # Non-empty *and* every element is a real expr. A ``*a`` element parses
+        # to a Starred node inside non-empty ``elts`` yet leaves the container
+        # empty (falsy) when ``a`` is empty, so ``[*a]`` is not unconditionally
+        # truthy.
+        return bool(node.elts) and all(not isinstance(e, ast.Starred) for e in node.elts)
+    if isinstance(node, ast.Dict):
+        # A ``None`` key marks ``**a`` unpacking: ``{**a}`` has ``keys=[None]``,
+        # non-empty but empty (falsy) when ``a`` is. Require every key present.
+        return bool(node.keys) and all(k is not None for k in node.keys)
+    return False
 
 
 def _raises(node: ast.AST) -> bool:

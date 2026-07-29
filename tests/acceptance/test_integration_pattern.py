@@ -68,7 +68,8 @@ def test_app_can_register_and_run_domain_checks() -> None:
 
     def check_orders_have_customers() -> None:
         # An app's existing raising check. Passes here.
-        assert True, "every order has a customer"
+        orders = [{"id": 1, "customer": "acme"}]
+        assert all("customer" in order for order in orders), "every order has a customer"
 
     def check_prices_never_negative() -> None:
         raise AssertionError("SKU-9 has price -3")
@@ -150,12 +151,26 @@ def test_public_api_surface_is_sufficient_for_an_integrator() -> None:
 
     # The deeper primitives an app's own checks build on — reachable as
     # documented sub-APIs, not the top-level seam, but importable.
-    from celebrimbor.ledgers import load_invariants, load_producers  # noqa: F401
-    from celebrimbor.ratchets import coverage_regressions, new_survivors  # noqa: F401
-    from celebrimbor.scenarios import pairwise  # noqa: F401
-    from celebrimbor.surface import inventory, load_map  # noqa: F401
+    from celebrimbor.ledgers import load_invariants, load_producers
+    from celebrimbor.ratchets import coverage_regressions, new_survivors
+    from celebrimbor.scenarios import pairwise
+    from celebrimbor.surface import inventory, load_map
 
-    assert True  # the imports above are the assertion
+    # The imports themselves are the surface being proved; assert every one of
+    # them resolved to something callable, so this test fails if a documented
+    # sub-API stops being importable — not a tautology on a filler `assert True`.
+    assert all(
+        callable(primitive)
+        for primitive in (
+            load_invariants,
+            load_producers,
+            coverage_regressions,
+            new_survivors,
+            pairwise,
+            inventory,
+            load_map,
+        )
+    )
 
 
 @pytest.mark.parametrize("stage", ["fast", "default", "full"])

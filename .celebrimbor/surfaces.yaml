@@ -112,6 +112,10 @@ modules:
     role: verifier
     status: ratified
     pin: "8f56a7d26200"
+  checks.vacuity:
+    role: verifier
+    status: ratified
+    pin: "4659045ef3f3"
   cli:
     role: adapter
     status: ratified
@@ -249,6 +253,10 @@ modules:
     role: pure
     status: ratified
     pin: "ce2f2ea79a1a"
+  structure.vacuity:
+    role: pure
+    status: ratified
+    pin: "0349e2a51b5c"
   surface.audit:
     role: pure
     status: ratified

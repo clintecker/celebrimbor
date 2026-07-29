@@ -83,6 +83,7 @@ nav:
       - Ledgers: gate/ledgers.md
       - Ratchets: gate/ratchets.md
       - Fixtures & markers: gate/fixtures.md
+      - Vacuity: gate/vacuity.md
       - The gates on the gates: gate/meta.md
   - Guides:
       - Adopting an existing app: guides/adoption.md
