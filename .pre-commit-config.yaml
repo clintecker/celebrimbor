@@ -1,13 +1,24 @@
-# Managed by `celebrimbor init`. One hook, on purpose.
+# Managed by `celebrimbor init`.
 #
-# The ladder is not wired here tool-by-tool: `celebrimbor gate --fast` runs
-# lint, format, types, known-bad and the surface audit in one process, in a
-# deliberate order, with one consistent report. Listing each tool separately
-# would mean two places to keep in sync and two different ideas of what
-# "passing" means.
+# The ladder is one hook, on purpose: `celebrimbor gate --fast` runs lint, format,
+# types, known-bad and the surface audit in one process, in a deliberate order,
+# with one consistent report. Listing each tool separately would mean two places
+# to keep in sync and two different ideas of what "passing" means.
+#
+# The second hook is not part of the ladder — it guards the repo *state*, not the
+# code: a commit made on a detached HEAD (e.g. parked on a tag after a release) is
+# silently lost by `git push origin main`, which reports "up-to-date" while doing
+# nothing. No `gate --fast` would catch that, because the commit is fine; where it
+# lands is not. It runs first because it is cheap and fails closed.
 repos:
   - repo: local
     hooks:
+      - id: no-detached-head
+        name: refuse to commit on a detached HEAD
+        entry: scripts/guard-attached-head.sh
+        language: script
+        pass_filenames: false
+        always_run: true
       - id: celebrimbor-gate
         name: celebrimbor gate --fast
         entry: celebrimbor gate --fast
