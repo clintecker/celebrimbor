@@ -459,9 +459,17 @@ def scan_callable(
     return scanner.uses
 
 
-def violations(uses: list[AmbientUse], role: Role) -> list[BudgetViolation]:
-    """Filter ambient uses down to those the role does not permit."""
-    allowed = ROLE_BUDGET.get(role, frozenset())
+def violations(
+    uses: list[AmbientUse], role: Role, ambient_ok: frozenset[Capability] = frozenset()
+) -> list[BudgetViolation]:
+    """Ambient uses that neither the role's budget nor the app's allow-list permits.
+
+    ``ambient_ok`` is an app-declared set of capabilities that are its tested
+    domain medium (filesystem for a file-processing tool, say) rather than an
+    injectable side effect — permitted ambiently for *every* role. It defaults
+    empty, so the strict per-role budget is unchanged unless a project opts in.
+    """
+    allowed = ROLE_BUDGET.get(role, frozenset()) | ambient_ok
     return [
         BudgetViolation(use=use, role=role, allowed=allowed)
         for use in uses

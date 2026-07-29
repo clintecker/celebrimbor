@@ -131,9 +131,26 @@ check_modules = ["myapp.quality_checks"]
 # match an existing harness's notion of a policy role. An unknown role name is
 # an error, not ignored — a typo would silently shrink what is governed.
 policy_roles = ["verifier", "parser", "producer", "adapter", "orchestrator"]
+
+# Capabilities that any role may reach for ambiently, because they are this
+# app's tested domain medium rather than an injectable side effect — a
+# file-processing tool tests its filesystem reads directly. Listed capabilities
+# are still scanned and reported, just not a breach. Empty = the strict default
+# (only `adapter` may touch any capability ambiently). An unknown capability
+# name is an error, so the opt-in stays honest and on the record.
+ambient_capabilities = ["filesystem"]
 ```
 
 Disabling a check is visible in every run — an exception, not a hiding place.
+
+`ambient_capabilities` is a deliberately narrow escape from the [capability
+gate](../gate/capabilities.md): it says "this capability is what my app *is*, so
+reaching for it directly is not an un-injected dependency." Reserve it for the
+medium you actually test through end to end — `filesystem` for a file tool,
+`database` for a query layer. The genuinely un-injectable capabilities (`clock`,
+`network`, `random`) do not belong here: they have behaviour no test can reach,
+which is the whole reason the gate wants them behind a seam. Naming one of those
+is legal but is a smell, not a fix.
 
 ## State directory
 

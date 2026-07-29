@@ -26,7 +26,7 @@ from ..ratchets.structure import (
 )
 from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
-from ..structure.capabilities import scan_callable, violations
+from ..structure.capabilities import Capability, scan_callable, violations
 from ..structure.cohesion import analyze
 from ..structure.complexity import measure_module
 from ..yamlio import YamlError
@@ -264,11 +264,12 @@ def check_capabilities(ctx: Context) -> CheckResult:
     if isinstance(smap, CheckResult):
         return smap
 
+    ambient_ok = frozenset(Capability(c) for c in ctx.config.ambient_capabilities)
     breaches: list[Breach] = []
     scanned = 0
     for entry in iter_ratified(ctx, smap):
         scanned += 1
-        for breach in violations(scan_callable(entry.node, entry.info), entry.role):
+        for breach in violations(scan_callable(entry.node, entry.info), entry.role, ambient_ok):
             breaches.append(
                 Breach(
                     key=f"capability/{entry.info.key}:{breach.use.capability.value}",

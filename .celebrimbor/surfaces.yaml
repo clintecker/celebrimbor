@@ -27,6 +27,10 @@
 
 version: 1
 modules:
+  _config_load:
+    role: parser
+    status: ratified
+    pin: "8ed174302efb"
   _import_probe:
     role: adapter
     status: ratified
@@ -93,7 +97,7 @@ modules:
   checks.structure:
     role: verifier
     status: ratified
-    pin: "22c8abe4b22d"
+    pin: "2704f84d7e52"
   checks.surface:
     role: verifier
     status: ratified
@@ -129,7 +133,7 @@ modules:
   config:
     role: parser
     status: ratified
-    pin: "0b54abb39e28"
+    pin: "f02049c5df58"
   context:
     role: pure
     status: ratified

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
     from .context import Context
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 
 if TYPE_CHECKING:
     from .ratchets.mutation import Survivor

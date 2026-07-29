@@ -4,6 +4,31 @@ All notable changes to celebrimbor are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.12.0 — 2026-07-29
+
+### Added
+
+- **An app can declare a capability as its tested medium (issue #13).** The
+  dependency-injection gate budgets ambient capability use by role — only an
+  `adapter` may reach for I/O without a seam. That is right for most apps, but a
+  tool whose reason to exist *is* a capability (a file processor's filesystem, a
+  query layer's database) was forced to fake the very thing it is tested against.
+  Now `[tool.celebrimbor] ambient_capabilities = ["filesystem"]` widens the
+  budget for every role, by capability: that capability may be reached for
+  ambiently anywhere, while every other capability stays strict. The widening is
+  per capability, applies uniformly (no per-callable carve-outs that rot), and is
+  on the record in config. An unknown capability name is a hard `ConfigError`, so
+  the opt-in cannot be a typo that quietly disables the gate.
+
+### Changed
+
+- Config parsing moved from `config.py` into a new private `_config_load` module,
+  keeping `config.py` as the data (the frozen `Config`, its derived paths,
+  `CheckerSpec`) and the parsing/validation machinery separate. Internal only —
+  the public seam is still `Config.load`. Done to keep celebrimbor's own source
+  green under its structure gate with zero grandfathered breaches, rather than
+  exempt an over-long file.
+
 ## 0.11.0 — 2026-07-28
 
 ### Added

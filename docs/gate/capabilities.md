@@ -77,3 +77,31 @@ roles, the identical line is a violation in a `pure` callable and correct in an
 Two honest fixes: inject the capability (add the seam), or reclassify the
 callable as what it actually is. There is no third "suppress it" that leaves the
 untestable behavior in place.
+
+## When a capability *is* the app: `ambient_capabilities`
+
+For most apps the table above is the whole story. But some tools are *about* a
+capability — a file-processing utility whose reason to exist is reading and
+writing files, a query layer whose medium is the database. For those, requiring
+every filesystem read to be injected turns the seam into ceremony: you would fake
+the very thing the app is tested end-to-end against.
+
+`ambient_capabilities` widens the budget for **every** role, by capability:
+
+```toml
+[tool.celebrimbor]
+ambient_capabilities = ["filesystem"]
+```
+
+Now a `pure` or `parser` callable may reach for the filesystem ambiently without
+a breach — but a reach for `clock`, `network`, or anything else is still red in
+those roles. This is not the missing "suppress it": the widening is per
+capability, applies uniformly (no per-callable carve-outs that rot), and is
+declared in config where every run and every reviewer can see it. An unknown
+capability name is a hard `ConfigError`, so the opt-in cannot be a typo that
+quietly disables the gate.
+
+Reserve it for the medium you genuinely test through. The un-injectable
+capabilities — `clock`, `network`, `random` — have behaviour no test can reach,
+which is the entire reason the gate wants them behind a seam; listing one here is
+legal but defeats the point.

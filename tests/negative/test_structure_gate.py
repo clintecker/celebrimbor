@@ -268,3 +268,91 @@ def test_empty_source_tree_refuses_rather_than_passes(project: Project) -> None:
     result = project.run(_COMPLEXITY)
     assert result.verdict is Verdict.REFUSED
     assert "proves nothing" in (result.reason or "")
+
+
+# --- app-declared ambient capabilities (issue #13) ------------------------
+
+_FS_PYPROJECT = """
+    [project]
+    name = "fixture"
+    version = "0.0.0"
+
+    [tool.celebrimbor]
+    source = "src"
+    ambient_capabilities = ["filesystem"]
+    """
+
+
+def test_ambient_capability_allow_list_suppresses_the_breach(project: Project) -> None:
+    """A file-processing tool declares filesystem is its medium — no breach."""
+    project.pyproject(_FS_PYPROJECT)
+    project.module(
+        "app.loaders",
+        '''
+        """Loaders — filesystem is this tool's tested medium."""
+
+        from __future__ import annotations
+
+        from pathlib import Path
+
+
+        def load(name: str) -> str:
+            """Read a config file directly."""
+            return Path("/etc/app.conf").read_text()
+        ''',
+    )
+    project.surfaces(
+        "version: 1\nmodules:\n  app.loaders:\n    role: parser\n    status: ratified\n"
+    )
+    _pin_all(project)
+    assert project.run(_CAPABILITIES).verdict is Verdict.PASS
+
+
+def test_allow_list_does_not_exempt_other_capabilities(project: Project) -> None:
+    """Filesystem allowed, but the clock is still real, un-injectable debt."""
+    project.pyproject(_FS_PYPROJECT)
+    project.module(
+        "app.loaders",
+        '''
+        """Loaders."""
+
+        from __future__ import annotations
+
+        from datetime import datetime
+        from pathlib import Path
+
+
+        def load(name: str) -> str:
+            """Reads a file (its medium) and the clock (real debt)."""
+            return Path("/etc/app.conf").read_text() + str(datetime.now())
+        ''',
+    )
+    project.surfaces(
+        "version: 1\nmodules:\n  app.loaders:\n    role: parser\n    status: ratified\n"
+    )
+    _pin_all(project)
+
+    result = project.run(_CAPABILITIES)
+    assert result.verdict is Verdict.FAIL
+    msgs = " ".join(f.message for f in result.findings)
+    assert "reaches for clock" in msgs
+    assert "reaches for filesystem" not in msgs
+
+
+def test_unknown_ambient_capability_is_a_config_error(project: Project) -> None:
+    """A typo'd capability is loud, not a silent no-op exemption."""
+    from celebrimbor.config import Config, ConfigError
+
+    project.pyproject(
+        """
+        [project]
+        name = "fixture"
+        version = "0.0.0"
+
+        [tool.celebrimbor]
+        source = "src"
+        ambient_capabilities = ["filesytem"]
+        """
+    )
+    with pytest.raises(ConfigError, match="unknown capabilit"):
+        Config.load(project.root)
