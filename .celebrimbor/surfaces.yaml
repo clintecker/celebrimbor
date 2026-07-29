@@ -164,6 +164,10 @@ modules:
     role: pure
     status: ratified
     pin: "c679b528937a"
+  falsifier:
+    role: pure
+    status: ratified
+    pin: "bbd91e45afc1"
   ledgers.invariants:
     role: parser
     status: ratified

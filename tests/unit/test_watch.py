@@ -92,16 +92,12 @@ def test_non_yaml_in_ledger_is_not_relevant() -> None:
 def test_nested_baseline_is_relevant() -> None:
     """A baseline nested under the ledger dir feeds a fast check (structure), so an
     edit there moves the fast verdict and must re-run — not sit on a stale green."""
-    assert is_relevant(
-        Path(".celebrimbor/baselines/structure.yaml"), source="src", tests="tests"
-    )
+    assert is_relevant(Path(".celebrimbor/baselines/structure.yaml"), source="src", tests="tests")
 
 
 def test_ledger_cache_is_never_relevant() -> None:
     """The cache churns on every gate run; watching it would re-trigger the loop."""
-    assert not is_relevant(
-        Path(".celebrimbor/cache/inventory.yaml"), source="src", tests="tests"
-    )
+    assert not is_relevant(Path(".celebrimbor/cache/inventory.yaml"), source="src", tests="tests")
 
 
 def test_relevance_honours_a_custom_source_prefix() -> None:

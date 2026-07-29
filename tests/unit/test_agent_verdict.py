@@ -80,7 +80,9 @@ def test_refused_yields_a_work_item_with_refused_because() -> None:
     assert item["kind"] == "unestablished"
     assert item["blocking"] is True
     assert item["found"] == "the named negative proof could not be resolved to a real test"
-    assert item["refused_because"] == "the named negative proof could not be resolved to a real test"
+    assert (
+        item["refused_because"] == "the named negative proof could not be resolved to a real test"
+    )
     assert item["action"] == "write the negative proof, or drop `critical: true`"
 
 
@@ -103,7 +105,9 @@ def test_refused_with_a_finding_keeps_found_and_refused_because_distinct() -> No
     verdict = _render(result)
     (item,) = verdict["work_items"]
     assert item["found"] == "invariant 'order-has-customer' has no resolvable negative_proof"
-    assert item["refused_because"] == "the named negative proof could not be resolved to a real test"
+    assert (
+        item["refused_because"] == "the named negative proof could not be resolved to a real test"
+    )
     assert item["found"] != item["refused_because"]
     assert item["kind"] == "invariant-proof-absent"
 
@@ -165,7 +169,9 @@ def test_every_red_result_across_a_multi_red_report_becomes_a_work_item() -> Non
         CheckResult.failed(
             "celebrimbor.surface.evidence",
             "a role is contradicted",
-            Finding(message="never turns red", path=Path("src/a.py"), line=7, code="role-contradicted"),
+            Finding(
+                message="never turns red", path=Path("src/a.py"), line=7, code="role-contradicted"
+            ),
         ),
         CheckResult.refused(
             "celebrimbor.invariants",
@@ -178,7 +184,11 @@ def test_every_red_result_across_a_multi_red_report_becomes_a_work_item() -> Non
             Finding(message="a.py too complex", path=Path("src/a.py"), code="structure-module"),
         ),
     )
-    red_check_ids = {"celebrimbor.surface.evidence", "celebrimbor.invariants", "celebrimbor.structure.complexity"}
+    red_check_ids = {
+        "celebrimbor.surface.evidence",
+        "celebrimbor.invariants",
+        "celebrimbor.structure.complexity",
+    }
     item_check_ids = {item["check_id"] for item in verdict["work_items"]}
     assert red_check_ids <= item_check_ids  # every red check_id is represented
     assert (verdict["exit_code"] == 1) == bool(verdict["work_items"])  # red iff non-empty queue
