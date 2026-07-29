@@ -119,7 +119,7 @@ modules:
   cli:
     role: adapter
     status: ratified
-    pin: "5d5a927ba480"
+    pin: "ea004304b736"
     overrides:
       explain: presenter
       main: pure
@@ -290,6 +290,10 @@ modules:
     pin: "9d03ff575717"
     overrides:
       apply: producer
+  watch:
+    role: pure
+    status: ratified
+    pin: "21acae342526"
   waiver:
     role: parser
     status: ratified
