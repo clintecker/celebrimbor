@@ -105,3 +105,14 @@ invariants:
     enforced_by: checks.vacuity:check_vacuity
     critical: true
     negative_proof: tests/negative/test_vacuity_gate.py::test_tautological_assert_is_red
+
+  declared-check-module-loads-or-refuses:
+    statement: >-
+      A declared check module that cannot be imported is a hard error, never a
+      silently smaller gate. An app names its own @check modules to have them run;
+      dropping one that fails to import would quietly shrink what the gate proves —
+      the silent pass the harness exists to prevent. The loader inspects, it does
+      not trust.
+    enforced_by: checks:load_check_modules
+    critical: true
+    negative_proof: tests/unit/test_check_modules.py::test_missing_module_is_a_hard_error_not_a_skip
