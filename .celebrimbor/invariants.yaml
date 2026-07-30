@@ -116,3 +116,14 @@ invariants:
     enforced_by: checks:load_check_modules
     critical: true
     negative_proof: tests/unit/test_check_modules.py::test_missing_module_is_a_hard_error_not_a_skip
+
+  agent-verdict-carries-no-trust-surface:
+    statement: >-
+      The machine-consumable verdict (`gate --format=agent`) carries no trust
+      surface — no score, severity, or ranking a coding agent could optimize. The
+      only float in the emitted object is `duration_s`. A single quality number
+      would turn the gate into something to game rather than a set of claims to
+      satisfy, which is the estimating behaviour the whole harness refuses.
+    enforced_by: agent:render_agent
+    critical: true
+    negative_proof: tests/unit/test_agent_verdict.py::test_no_float_anywhere_except_duration_s

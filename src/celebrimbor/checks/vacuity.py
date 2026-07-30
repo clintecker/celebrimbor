@@ -27,7 +27,6 @@ establish, and REFUSED is the fail-closed home for that.
 from __future__ import annotations
 
 import ast
-import fnmatch
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -35,6 +34,7 @@ from ..context import Context
 from ..registry import Family, check
 from ..result import CheckResult, Finding, Stage
 from ..structure.vacuity import tautologies
+from ..surface.inventory import _ALWAYS_EXCLUDED, _excluded
 from ._shared import get_inventory
 
 _ID = "celebrimbor.vacuity"
@@ -45,11 +45,6 @@ def _findings(tree: ast.AST, rel: Path) -> list[Finding]:
         Finding(message=v.message, path=rel, line=v.line, code="assert-tautology")
         for v in tautologies(tree)
     ]
-
-
-def _excluded(rel: Path, patterns: tuple[str, ...]) -> bool:
-    text = rel.as_posix()
-    return "__pycache__" in rel.parts or any(fnmatch.fnmatch(text, pat) for pat in patterns)
 
 
 def _test_files(ctx: Context) -> Iterator[tuple[Path, Path]]:
@@ -68,7 +63,7 @@ def _test_files(ctx: Context) -> Iterator[tuple[Path, Path]]:
         if path.is_relative_to(known_bad):
             continue
         rel = path.relative_to(config.root)
-        if _excluded(rel, config.exclude):
+        if _excluded(rel, (*_ALWAYS_EXCLUDED, *config.exclude)):
             continue
         yield path, rel
 
