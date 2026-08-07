@@ -178,11 +178,12 @@ body {
   border-bottom: 1px solid rgba(230,194,92,.12);
 }
 
-/* Nav — the console index, in mono. */
+/* Nav — the console index, in mono. Let Material size it (its mobile drawer
+   sizing is comfortable); we only change the face and a hair of tracking, so it
+   never becomes tiny cramped mono on a phone. */
 .md-nav {
   font-family: var(--elf-console);
-  font-size: .64rem;
-  letter-spacing: .04em;
+  letter-spacing: .01em;
 }
 .md-nav__title { text-transform: uppercase; letter-spacing: .14em; }
 .md-nav__item .md-nav__link--active {
@@ -354,6 +355,38 @@ body {
 /* Search & footer — the same firelight through the whole hall. */
 .md-search__input { font-family: var(--elf-console); letter-spacing: .04em; }
 .md-footer-meta { border-top: 1px solid rgba(230,194,92,.2); }
+
+/* --------------------------------------------------------------------------
+   Mobile — the graven headings are large and letter-spaced, which overflows a
+   phone; scale them down and drop the tracking, give the Garamond body more
+   size, and shrink the oversized vertical rhythm. Prevent any horizontal
+   scroll of the page itself (wide code/tables scroll inside their own boxes).
+   -------------------------------------------------------------------------- */
+html { overflow-x: hidden; }
+
+@media screen and (max-width: 44.9375em) {
+  .md-typeset { font-size: .9rem; line-height: 1.68; }
+
+  .md-typeset h1 { font-size: 1.55rem; letter-spacing: .015em; }
+  .md-typeset h1#celebrimbor { font-size: 2.05rem; letter-spacing: .03em; }
+  .md-typeset h2 { font-size: 1.2rem; margin-top: 1.9em; letter-spacing: .01em; }
+  .md-typeset h2::before { width: .42em; height: .42em; margin-right: .45em; }
+  .md-typeset h3 { font-size: 1.02rem; }
+
+  .md-typeset hr { margin: 2em 0; }
+
+  /* Buttons stack full-width and stay legible instead of overflowing. */
+  .md-typeset .md-button {
+    display: block;
+    text-align: center;
+    font-size: .62rem;
+    letter-spacing: .1em;
+    margin: .4rem 0 0;
+  }
+
+  /* Ease the mono tracking on the header title so it never clips. */
+  .md-header__title { letter-spacing: .06em; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .md-typeset hr::before { animation: none; }
