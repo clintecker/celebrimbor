@@ -1,13 +1,12 @@
 # Why celebrimbor
 
-This page is the argument, made concretely. If you already believe the pitch and
-want to use the tool, [Getting started](../getting-started.md) is the page you
-want.
+This page makes the case with real examples. If you're already sold and just want
+to use the tool, [Getting started](../getting-started.md) is the page you want.
 
-## What your existing tools cannot see
+## What your existing tools can't see
 
-Take four functions. Every one of them passes `ruff`, passes `mypy --strict`,
-and passes a test suite — including tests an AI wrote alongside the code.
+Here are four functions. Every one of them passes `ruff`, passes `mypy --strict`,
+and passes a test suite — including tests an AI wrote to go with the code.
 
 ```python
 def verify_invoice(inv: Invoice) -> bool:
@@ -28,26 +27,27 @@ def slugify(title: str) -> str:
 
 def test_pricing():
     price = compute_price(cart)
-    assert price is not None         # (4) asserts nothing that can fail meaningfully
+    assert price is not None         # (4) asserts nothing that can really fail
 ```
 
-1. A **blind verifier.** It has one job — reject bad invoices — and it cannot.
-   Every call is green. Coverage is 100%. It is worse than no check, because it
-   manufactures confidence.
-2. A **parser that does not parse.** It transforms happy input and explodes on
-   the rest with an incidental `AttributeError`. It never *refuses*; there is no
-   negative fixture that could pin its behavior on bad input.
-3. A **"pure" function with a hidden dependency.** Its output depends on wall
-   time. No test can pin it, because there is no seam to substitute a clock
-   through. What does it do at a leap second? Nobody can write that test.
-4. A **test that cannot fail.** `is not None` passes for every non-`None` value,
-   including a wrong one.
+1. A **checker that can't fail.** Its one job is to reject bad invoices — and it
+   never does. Every call comes back green. Test coverage is 100%. It's *worse*
+   than having no check, because it manufactures confidence.
+2. A **parser that doesn't parse.** It handles good input and blows up on
+   anything else with an accidental `AttributeError`. It never actually
+   *rejects* bad input on purpose — so there's no clean way to prove it guards
+   against it.
+3. A **"pure" function with a hidden dependency.** Its output depends on the
+   current time. No test can pin it down, because there's no way to hand it a
+   fake clock. What does it do at a leap second? Nobody can write that test.
+4. A **test that can't fail.** `is not None` is true for every value that isn't
+   `None` — including a completely wrong one.
 
 Linters check style. Type checkers check shapes. Tests check the cases you
 thought to write. **None of them ask whether the code is what it claims to be.**
-That question is unanswered by the entire commodity ladder, and it is precisely
-the question that matters for code you did not write by hand — code from an AI,
-or from six months ago, or from someone else.
+That question goes unanswered by all your everyday tools — and it's exactly the
+question that matters for code you didn't write by hand: code from an AI, or from
+six months ago, or from someone else.
 
 ```mermaid
 flowchart TD
@@ -56,103 +56,112 @@ flowchart TD
     C["tests — do the cases I wrote pass?"]
     D["<b>celebrimbor — is it what it claims to be?</b>"]
     A --> B --> C --> D
-    D -.->|"the gap every other layer leaves open"| X(["where plausible-but-wrong lives"])
+    D -.->|"the gap every other layer leaves open"| X(["where 'looks right but is wrong' lives"])
 ```
 
-Each layer answers a real question; none of them answers the last one.
+Each layer answers a real question. None of them answers the last one.
 
 ## What celebrimbor does about each one
 
-Celebrimbor assigns every callable a **role** — a claim about what proof it owes
-— and then makes that claim *falsifiable*. Each failure above is caught by a
-specific, mechanical check, not by a reviewer's diligence:
+celebrimbor gives every function a **role** — the job it does — and each role
+comes with a specific kind of proof that job requires. Each failure above is
+caught by a specific, mechanical check, not by a reviewer paying close attention:
 
 | Failure | Caught by | How |
 |---|---|---|
-| Blind verifier (1) | the evidence gate | a `verifier` whose every return path is a truthy literal *can never turn red* — detectable in the AST |
-| Non-refusing parser (2) | the evidence gate | a `parser` with no reachable failing path is refused; and it owes a negative fixture that must reject malformed input |
-| Impure "pure" (3) | the capability gate | `datetime.now()` is an *ambient* reach; a `pure` callable's capability budget is empty, so the un-injected clock is red |
-| Vacuous test (4) | the marker gate | a test with no assertion cannot fail, so it proves nothing, and is rejected |
+| Checker that can't fail (1) | the evidence check | a `verifier` whose every path returns a truthy value *can never turn red* — you can see it right in the code's structure |
+| Parser that doesn't reject (2) | the evidence check | a `parser` with no path that actually rejects is refused; and it owes a saved example of bad input it must turn away |
+| "Pure" function that isn't (3) | the capabilities check | `datetime.now()` is a reach into the outside world; a `pure` function is allowed no such reach, so the grabbed clock turns it red |
+| Empty test (4) | the marker check | a test with no real assertion can't fail, so it proves nothing, and is rejected |
 
-None of these are style opinions. They are structural facts about the code that
-the gate reads directly. An author — human or model — cannot satisfy the gate by
-being *plausible*; they have to produce code that carries its own falsifier.
+None of these are matters of taste. They're structural facts about the code that
+the gate reads straight off it. An author — person or model — can't satisfy the
+gate by being *convincing*; they have to produce code that carries a way to catch
+it being wrong.
 
-## Why this is the right shape for AI-generated code
+## Why this is the right shape for AI-written code
 
-A language model is a plausibility engine. Given a task, it produces the most
-likely-looking code, and likely-looking is exactly what slips past tools that
-check form rather than proof. That is not a knock on models — it is what they
-optimize for — but it means the review burden lands on you, and "looks correct"
-is a burden that does not scale.
+A language model is a plausibility machine. Given a task, it produces the
+most likely-*looking* code — and likely-looking is exactly what slips past tools
+that check form rather than proof. That's not a knock on models; it's what
+they're built to do. But it means the burden of catching mistakes lands on you,
+and "looks correct" is a burden that doesn't scale.
 
-Celebrimbor moves the burden of proof onto the code, by construction. The gate
-**fails closed**: when it cannot prove a claim, it refuses (red) rather than
-guessing green. A model cannot talk its way past that, because there is no
-argument to make — there is only a fixture that turns the gate red, or there
-isn't. You review a red gate with a specific finding, not a plausible diff.
+celebrimbor moves that burden onto the code itself. The gate **fails closed**:
+when it can't prove a claim, it refuses (turns red) rather than guessing green. A
+model can't talk its way past that, because there's no argument to make — either
+there's a test that turns the gate red, or there isn't. You review a red gate
+with a specific finding in front of you, not a plausible-looking diff.
 
-The project's own thesis is that *an agent building without a falsifier in reach
-will produce something plausible and wrong.* Celebrimbor is the falsifier, kept
-in reach.
+The tool's whole premise is this: *an AI building without a way to be caught
+being wrong will produce something plausible and wrong.* celebrimbor is that
+way-to-be-caught, kept always within reach.
 
-## Why a framework, and not a pile of tools
+## Why one tool, and not a pile of them
 
 The individual ideas here are old. Mutation testing, property-based testing,
-dependency injection, the object-capability model, coverage ratchets, invariant
-ledgers, provenance-checked fixtures, design-by-contract — each has a tool, a
-paper, a community. If you assembled all of them yourself you would have eight
-configs, eight mental models, and eight ways for them to disagree.
+dependency injection, capability-based security, coverage ratchets, recorded
+invariants, design-by-contract — each has its own tool, its own paper, its own
+following. Assemble all of them yourself and you'd have eight configs, eight
+mental models, and eight ways for them to disagree.
 
-What celebrimbor contributes is the **coupling**. They are not eight tools; they
-are one obligation engine keyed on a single spine — the role — so they reinforce
-each other:
+What celebrimbor adds is the **wiring between them**. They aren't eight tools
+here; they're one system built around a single spine — the role each function
+plays — so they reinforce each other:
 
-- The **capability gate** can only be trusted because the **evidence gate**
-  proves the role it keys on is honest. (An `adapter` label with unrestricted
-  budget would be a trivial escape — unless declaring `adapter` on a callable
-  that adapts nothing is itself refused. It is.)
-- The **impact gate** is only meaningful because the **surface map** is provably
-  *complete* — every public callable is accounted for, checked by an AST
-  inventory that never imports your code, so it cannot fall behind code that
-  fails to import.
-- A **producer** is only trustworthy because it names a **verifier**, and that
-  verifier is only trustworthy because it names a **negative fixture proven to
-  turn it red.** The chain of proof is enforced end to end.
+- The **capabilities check** can be trusted only because the **evidence check**
+  first proves that the role it relies on is honest. (Slapping an
+  "adapter" label — the one role allowed to touch the outside world — on
+  everything would be an easy way to cheat, *unless* labelling something an
+  adapter that adapts nothing is itself rejected. It is.)
+- The **change-impact check** means something only because the map of your code
+  is provably *complete* — every public function is accounted for, read straight
+  from the source without ever running it, so the map can't fall behind code that
+  won't even import.
+- A function that **builds something** is trustworthy only because it names a
+  **checker** that inspects what it built — and that checker is trustworthy only
+  because it names a **saved failing example proven to turn it red.** The chain of
+  proof is enforced end to end.
 
-No point tool gives you that, because each sees only its own slice. The value is
-in the joins.
+No single-purpose tool gives you that, because each one only sees its own slice.
+The value is in the joins.
 
-## Why it is adoptable: convention over configuration
+## Why it's easy to adopt: good defaults over configuration
 
-A discipline this thorough would be unusable if you had to configure it. You
-don't. The heavy lifting is convention:
+A discipline this thorough would be unusable if you had to configure all of it.
+You don't. Most of the work is handled by sensible conventions:
 
-- **Roles are inferred**, not authored — you *ratify* a pre-filled map one line
-  at a time, and inference abstains rather than guessing wrong.
-- **Known-bad is a directory**, not a config block.
-- **Ratchets auto-baseline** in CI and thereafter only tighten.
-- The config file exists for **exceptions only**.
+- **Roles are guessed for you** from your code, not written by hand — you just
+  confirm a pre-filled map one line at a time, and when the guess isn't clear the
+  tool holds back rather than guessing wrong.
+- **The "should be rejected" examples live in a directory**, not a config block.
+- **The one-way quality gates set their own starting line** the first time they
+  run in CI, and after that only tighten.
+- **The config file is for exceptions only.**
 
-`celebrimbor init` wires the commodity ladder with opinionated defaults;
-`celebrimbor gate --fast` is green on a fresh repo in minutes. obligation gates are opt-in
-and authored, so nothing reddens on day one. You grow into the guarantees.
+`celebrimbor init` sets up the everyday checks with good defaults;
+`celebrimbor gate --fast` is green on a fresh project in minutes. The deeper
+proving checks are opt-in, so nothing turns red on day one. You grow into the
+guarantees.
 
-Convention is also what makes it resistant to hallucination in the first place:
-the rules are enforced *structurally*, in the gate, not left to a prompt, a
-style guide, or a reviewer's attention on a Friday afternoon.
+Those built-in conventions are also what make the tool resistant to
+plausible-but-wrong code in the first place: the rules are enforced *by the gate*,
+mechanically — not left to a prompt, a style guide, or a reviewer's attention on
+a Friday afternoon.
 
 ## What it is not
 
-Being honest about the edges, because a tool that oversells gets disabled:
+Being honest about the edges, because a tool that oversells gets switched off:
 
-- It is **not a correctness prover.** The static checks are *necessary
-  contradiction detectors* — they catch a verifier that provably cannot fail,
-  not one that fails to catch a specific bug. The positive proof still lives in
-  your tests; celebrimbor makes sure those tests exist and can bite.
-- It does **not replace your test suite, types, or linters.** It runs them (the commodity ladder) and adds the layer that makes them mean something.
-- It is **opinionated on purpose.** Omakase. If you want to configure everything,
-  this is the wrong tool; the whole point is that you don't.
+- It is **not a correctness prover.** Its automatic checks catch a checker that
+  *provably* can't fail — not one that simply misses a specific bug. The positive
+  proof still lives in your tests; celebrimbor makes sure those tests exist and
+  can actually bite.
+- It does **not replace your tests, types, or linters.** It runs them, and adds
+  the layer that makes them mean something.
+- It is **opinionated on purpose.** If you want to configure every last thing,
+  this is the wrong tool — the whole point is that you don't have to.
 
-If that trade — strong conventions, a gate that fails closed, in exchange for
-claims you can actually falsify — sounds right, [start here](../getting-started.md).
+If that trade — strong conventions and a gate that refuses when it can't prove,
+in exchange for claims you can actually catch being wrong — sounds right,
+[start here](../getting-started.md).

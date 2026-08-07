@@ -1,17 +1,22 @@
 # Capabilities — the dependency-injection gate
 
-`celebrimbor.structure.capabilities` is the sharpest application of the thesis:
-**an un-injected dependency is a claim the test cannot contradict.**
+First, the word. A **capability** is a piece of the outside world a function
+reaches for: the clock, the network, files, randomness, the database. This gate,
+`celebrimbor.structure.capabilities`, is the sharpest form of the whole idea
+behind celebrimbor: **if a function grabs one of those things directly instead of
+being handed it, no test can ever stand in its way — so no test can catch it
+misbehaving.**
 
-A function that calls `datetime.now()` has behavior — what it does at midnight, at
-a leap second, in another timezone — that no test can reach, because there is no
-seam to reach it through. That is the epistemic vacuum, applied to capabilities
-instead of to proofs.
+Think of a function that calls `datetime.now()`. What does it do at midnight? At a
+leap second? In another timezone? No test can find out, because there's no seam
+to slip a fake clock through. The behavior is real but unreachable — a blind spot,
+right where a hidden flaw would sit.
 
 ## Ambient vs injected
 
-The distinction is structural, and the AST can see it. Given a call, walk the
-attribute chain to its root:
+There are two ways a function can get at a capability, and celebrimbor can tell
+them apart just by reading the code's shape. Take any call and follow the chain of
+dots back to its root name:
 
 ```python
 def stamp(record):              def stamp(record, clock):
@@ -20,10 +25,12 @@ def stamp(record):              def stamp(record, clock):
     #            unreachable       #            is a parameter
 ```
 
-If the root is a **parameter** (or `self`/`cls`, or a local bound from one), the
-capability was handed in — a test can substitute a different one, so the behavior
-is reachable. If the root is a module-level import or a bare builtin like
-`open()`, the capability was *reached for*. There is no seam.
+If that root is a **parameter** (or `self`/`cls`, or a local set from one), the
+capability was **injected** — handed in as an argument. A test can pass in a
+different one, so the behavior is reachable and checkable. If the root is instead a
+module-level import or a bare builtin like `open()`, the function **reached for**
+the capability itself (we also call this *ambient*). There's no seam, and no way
+for a test to get in between.
 
 ```mermaid
 flowchart TD
@@ -37,8 +44,10 @@ flowchart TD
 
 ## Budgeted by role
 
-A capability is not universally forbidden — it has to live *somewhere*, or the
-program does nothing. The role says where.
+Reaching for a capability isn't banned outright — it has to happen *somewhere*, or
+your program does nothing at all. The function's role decides where it's allowed.
+Each role comes with a budget: the set of capabilities that job is permitted to
+reach for.
 
 | Role | May reach for |
 |---|---|
@@ -47,23 +56,26 @@ program does nothing. The role says where.
 | `presenter` | filesystem, process, environment |
 | `adapter` | everything |
 
-The shape of that table *is* the architecture. An `adapter` is the designated
-boundary — the one place I/O is allowed to be ambient — and that is exactly what
-makes every other role testable: adapters exist to be swapped. A `pure` callable
-touching the clock is a contradiction of a declared obligation, and the gate
-falsifies it.
+That table *is* the architecture, in miniature. An `adapter` is the one
+designated boundary — the single place a function is allowed to reach for the
+outside world directly — and that is exactly what keeps every other role testable:
+adapters exist precisely so a test can swap them out. A `pure` function that
+touches the clock is doing something its role promised it wouldn't, so the gate
+catches it.
 
-The capabilities celebrimbor recognizes: `clock`, `random`, `filesystem`,
-`network`, `environment`, `process`, `database`. The detection patterns are data,
-not hidden logic — a gate whose triggers are opaque gets disabled.
+The capabilities celebrimbor recognizes are `clock`, `random`, `filesystem`,
+`network`, `environment`, `process`, and `database`. The patterns it uses to spot
+them are plain data you can read, not hidden logic — a gate whose triggers you
+can't inspect is a gate people turn off.
 
-## Why it is obligation
+## Why it is a proving check
 
-The *budget* comes from the role, so this gate needs a ratified map. Without one
-there is no principled answer to "is this reach allowed here" — flag every
-adapter and it is noise nobody keeps; flag nothing and it never fires. With
-roles, the identical line is a violation in a `pure` callable and correct in an
-`adapter`.
+The budget comes from the function's role, so this gate needs the surface map to
+work — the list of every public function and the job you've assigned each one.
+Without that map there's no principled way to answer "is this reach allowed
+here?": flag every one and it's noise nobody keeps; flag none and it never fires.
+With roles in hand, the very same line of code is a violation in a `pure` function
+and perfectly correct in an `adapter`.
 
 ## Fixing a finding
 
@@ -74,34 +86,35 @@ roles, the identical line is a violation in a `pure` callable and correct in an
         If this callable is genuinely the boundary, its role is `adapter`.
 ```
 
-Two honest fixes: inject the capability (add the seam), or reclassify the
-callable as what it actually is. There is no third "suppress it" that leaves the
-untestable behavior in place.
+Two honest fixes: inject the capability (add the seam so a test can substitute
+one), or relabel the function as what it really is. There's no third option that
+just silences the warning and leaves the untestable behavior sitting there.
 
 ## When a capability *is* the app: `ambient_capabilities`
 
-For most apps the table above is the whole story. But some tools are *about* a
-capability — a file-processing utility whose reason to exist is reading and
-writing files, a query layer whose medium is the database. For those, requiring
-every filesystem read to be injected turns the seam into ceremony: you would fake
-the very thing the app is tested end-to-end against.
+For most apps the table above is the whole story. But some tools *are* a
+capability — a file-processing utility whose entire reason to exist is reading and
+writing files, or a query layer whose medium is the database. For those, forcing
+every file read to be handed in turns the seam into empty ceremony: you'd be
+faking the very thing the app is tested end-to-end against.
 
-`ambient_capabilities` widens the budget for **every** role, by capability:
+`ambient_capabilities` widens the budget for **every** role, one capability at a
+time:
 
 ```toml
 [tool.celebrimbor]
 ambient_capabilities = ["filesystem"]
 ```
 
-Now a `pure` or `parser` callable may reach for the filesystem ambiently without
-a breach — but a reach for `clock`, `network`, or anything else is still red in
-those roles. This is not the missing "suppress it": the widening is per
-capability, applies uniformly (no per-callable carve-outs that rot), and is
-declared in config where every run and every reviewer can see it. An unknown
-capability name is a hard `ConfigError`, so the opt-in cannot be a typo that
-quietly disables the gate.
+Now a `pure` or `parser` function may reach for the filesystem directly without
+tripping the gate — but reaching for `clock`, `network`, or anything else is still
+red in those roles. This still isn't a way to silence individual warnings: the
+widening is per capability, applies to every function the same way (no
+one-off carve-outs to rot over time), and lives in config where every run and
+every reviewer can see it. Name a capability that doesn't exist and you get a hard
+`ConfigError`, so a typo can't quietly switch the gate off.
 
-Reserve it for the medium you genuinely test through. The un-injectable
-capabilities — `clock`, `network`, `random` — have behaviour no test can reach,
-which is the entire reason the gate wants them behind a seam; listing one here is
-legal but defeats the point.
+Save this for the one medium you genuinely test through. The capabilities you
+*can't* fake — `clock`, `network`, `random` — have behavior no test can reach,
+which is the whole reason the gate wants them behind a seam in the first place;
+listing one here is allowed, but it throws away the protection.

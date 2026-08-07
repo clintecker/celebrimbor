@@ -1,13 +1,13 @@
 # Configuration reference
 
-Configuration is for the **exceptions only** — convention supplies the rest.
-Every setting has a default that works on a conventionally-laid-out project, and
-the config is optional. If you need config to get started, the conventions are
-wrong, and that is a bug to report, not a knob to turn.
+Config is for the **exceptions only** — good defaults cover the rest. Every
+setting already has a value that works on a normally laid-out project, so the
+config file is optional. If you need to write config just to get started, then the
+defaults are wrong — and that is a bug to report, not a knob for you to turn.
 
 Settings live under `[tool.celebrimbor]` in `pyproject.toml`, or in a dedicated
-`celebrimbor.toml` (which takes precedence). Resolution is explicit, and a
-malformed file never falls back to defaults:
+`celebrimbor.toml` (which wins if both exist). How celebrimbor finds your config
+is spelled out below, and a broken file never quietly falls back to the defaults:
 
 ```mermaid
 flowchart TD
@@ -27,9 +27,10 @@ tests = "tests"
 known_bad = "tests/known-bad"
 ```
 
-If a config file exists but is malformed, celebrimbor **refuses** — it never
-falls back to defaults, because you asked for something specific and silently
-doing something else is the estimating behavior the harness forbids.
+If a config file exists but is broken, celebrimbor **stops and refuses** — it
+never falls back to the defaults. You asked for something specific; quietly doing
+something else instead would be exactly the kind of guessing this tool refuses to
+do.
 
 ## Environment
 
@@ -39,8 +40,11 @@ trusted_environment = true     # a missing tool is red, not a skip
 pinned_environment = true      # ratchets may baseline here
 ```
 
-Both default to a CI signal (`CI=1`, or the usual CI env vars, or
-`CELEBRIMBOR_TRUSTED=1`). You rarely set these by hand — CI sets them for you.
+Both turn on automatically when they detect a CI environment (`CI=1`, or the usual
+CI environment variables, or `CELEBRIMBOR_TRUSTED=1`). You rarely set them by hand
+— CI sets them for you. In a *trusted* environment, a tool that should be there
+but isn't is treated as red, not skipped. A *pinned* environment is the one place
+allowed to reset a check's baseline (more on baselines below).
 
 ## Your own checks and checkers
 
@@ -63,18 +67,21 @@ callable = "myapp.editorial:diagnostics_for"     # or: command = "... {file}"
 match = "substring"                              # for phrase-emitting linters
 ```
 
-`check_modules` is [Writing custom checks](../guides/custom-checks.md);
-`known_bad_checkers` is [Fixtures & markers](../gate/fixtures.md);
-`mutation_survivors` is [Ratchets](../gate/ratchets.md). Each is the same kind of
-seam — you supply the tooling, celebrimbor runs it under its own guarantees — and
-a source that will not import or run is a hard fail-closed error, never a
-silently smaller gate.
+`check_modules` is covered in [Writing custom checks](../guides/custom-checks.md);
+`known_bad_checkers` in [Fixtures & markers](../gate/fixtures.md); and
+`mutation_survivors` in [Ratchets](../gate/ratchets.md). Each is the same kind of
+plug-in point — you supply the tooling, and celebrimbor runs it under the same
+rules as everything else. If one of your sources won't import or won't run,
+that's a hard error and the gate stops. It will never quietly run a smaller gate
+because one of your checks failed to load.
 
 ## Ledger paths
 
-Point celebrimbor at existing ledgers instead of moving them under
-`.celebrimbor/`. This is the hook that lets a project with an established
-`quality/` directory adopt without reorganizing.
+A *ledger* is a file where celebrimbor records the judgments and promises you have
+confirmed. If your project already keeps these files somewhere, point celebrimbor
+at them here instead of moving them under `.celebrimbor/`. This is what lets a
+project with an existing `quality/` directory adopt the tool without reorganizing
+anything.
 
 ```toml
 [tool.celebrimbor.paths]
@@ -86,9 +93,9 @@ mutation_baseline = "quality/mutation-baseline.yaml"
 structure_baseline = "quality/structure-baseline.yaml"
 ```
 
-An unknown key here is an error, not ignored — a typo'd override would leave
-celebrimbor reading the default location while you believed it was pointed
-elsewhere.
+An unknown key here is an error, not something to ignore — otherwise a typo in an
+override would leave celebrimbor quietly reading the default location while you
+believed you had pointed it somewhere else.
 
 ## Structure budgets
 
@@ -106,8 +113,9 @@ max_domains_per_file = 1
 max_public_callables = 20
 ```
 
-Every value is a ceiling. An unknown limit key is an error — a silently-dropped
-typo reads as a configured budget that is quietly not enforced.
+Every value is a ceiling. An unknown limit key is an error — if a typo were
+silently dropped, it would look like a budget you had set that was quietly not
+being enforced.
 
 ## Other
 
@@ -141,20 +149,29 @@ policy_roles = ["verifier", "parser", "producer", "adapter", "orchestrator"]
 ambient_capabilities = ["filesystem"]
 ```
 
-Disabling a check is visible in every run — an exception, not a hiding place.
+Disabling a check shows up in every run — it's an exception on the record, not a
+place to hide something.
 
-`ambient_capabilities` is a deliberately narrow escape from the [capability
-gate](../gate/capabilities.md): it says "this capability is what my app *is*, so
-reaching for it directly is not an un-injected dependency." Reserve it for the
-medium you actually test through end to end — `filesystem` for a file tool,
-`database` for a query layer. The genuinely un-injectable capabilities (`clock`,
-`network`, `random`) do not belong here: they have behaviour no test can reach,
-which is the whole reason the gate wants them behind a seam. Naming one of those
-is legal but is a smell, not a fix.
+First, some vocabulary for that last setting. A *capability* is a piece of the
+outside world a function reaches for: the clock, the network, files, randomness.
+There are two ways a function can get one. *Injected* means the outside thing is
+handed in as an argument, so a test can swap in a fake. *Ambient* (or reached-for)
+means the function grabs it directly, so no test can stand in its way. The
+[capability gate](../gate/capabilities.md) normally allows only one role —
+`adapter` — to reach for capabilities ambiently.
+
+`ambient_capabilities` is a deliberately narrow way out of that rule. It says:
+"this capability is what my app *is*, so reaching for it directly is fine here."
+Reserve it for the medium you actually test all the way through — `filesystem` for
+a file tool, `database` for a query layer. The truly un-fakeable capabilities
+(`clock`, `network`, `random`) do not belong here: their behaviour is exactly what
+no test can reach, which is the whole reason the gate wants them handed in rather
+than grabbed. Naming one of those is allowed, but it's a warning sign, not a fix.
 
 ## State directory
 
-By default celebrimbor keeps ratified ledgers and baselines under `.celebrimbor/`
-in your repo. These are **committed** — they are the record of your team's
-ratified judgments and your ratcheted history, not a cache. The only thing that
-belongs in `.gitignore` is `.celebrimbor/cache/`.
+By default celebrimbor keeps its ledgers and baselines under `.celebrimbor/` in
+your repo. These are **committed to git** — they are the record of the judgments
+your team has confirmed and the history of every one-way quality gate you've
+tightened, not a throwaway cache. The only thing that belongs in `.gitignore` is
+`.celebrimbor/cache/`.

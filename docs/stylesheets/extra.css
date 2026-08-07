@@ -1,0 +1,309 @@
+/* ==========================================================================
+   celebrimbor — the visual identity of an Elven-smith's workshop.
+   Celebrimbor forged the Rings of Power in Eregion, the land of holly. The
+   palette is drawn from that world: holly-green and parchment by day, a
+   star-lit forge by night, with burnished gold (the rings, the forge-fire) and
+   mithril-silver as the two metals. Cinzel — a face cut in the manner of Roman
+   inscriptions — carries the headings like letters graven in a ring; EB
+   Garamond sets the body like a page from a tome.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap');
+
+/* --------------------------------------------------------------------------
+   Palette — light: "Eregion by day", a parchment manuscript.
+   -------------------------------------------------------------------------- */
+[data-md-color-scheme="default"] {
+  --forge-gold:        #8f6b1e;   /* legible gold for text/links on parchment */
+  --forge-gold-bright: #b8912f;   /* rules, flourishes, hovers */
+  --mithril:           #3f6f65;   /* the second metal, teal-silver */
+  --holly:             #1f3d33;   /* deep evergreen — the header, headings */
+  --parchment:         #f4eee1;
+  --parchment-raised:  #fbf7ee;
+  --ink:               #2b2a24;
+  --ink-muted:         #6b6656;
+  --hairline:          #ddd3bd;
+
+  --md-primary-fg-color:        var(--holly);
+  --md-primary-fg-color--light: #2c5849;
+  --md-primary-fg-color--dark:  #163028;
+  --md-accent-fg-color:         var(--forge-gold-bright);
+
+  --md-default-bg-color:      var(--parchment);
+  --md-default-fg-color:      var(--ink);
+  --md-default-fg-color--light: var(--ink-muted);
+  --md-default-fg-color--lighter: #8b8574;
+  --md-typeset-color:         var(--ink);
+  --md-typeset-a-color:       var(--forge-gold);
+
+  --md-code-bg-color:   #efe8d8;
+  --md-code-fg-color:   #43413a;
+
+  --elf-page-glow: radial-gradient(1200px 480px at 50% -8%,
+                     rgba(184,145,47,.10), transparent 70%);
+}
+
+/* --------------------------------------------------------------------------
+   Palette — dark ("slate"): "the forge under the stars".
+   -------------------------------------------------------------------------- */
+[data-md-color-scheme="slate"] {
+  --forge-gold:        #d8b24c;
+  --forge-gold-bright: #e6c469;
+  --mithril:           #8fc7ba;
+  --holly:             #0b100e;
+  --parchment:         #0e1512;   /* green-black twilight */
+  --parchment-raised:  #161f1a;
+  --ink:               #dfe6df;   /* mithril-silvered text */
+  --ink-muted:         #94a89e;
+  --hairline:          #26332c;
+
+  --md-hue: 155;
+
+  --md-primary-fg-color:        #0b100e;
+  --md-primary-fg-color--light: #16221c;
+  --md-primary-fg-color--dark:  #070a08;
+  --md-accent-fg-color:         var(--forge-gold-bright);
+
+  --md-default-bg-color:      var(--parchment);
+  --md-default-fg-color:      var(--ink);
+  --md-default-fg-color--light: var(--ink-muted);
+  --md-default-fg-color--lighter: #6f857b;
+  --md-typeset-color:         var(--ink);
+  --md-typeset-a-color:       var(--forge-gold);
+
+  --md-code-bg-color:   #131b16;
+  --md-code-fg-color:   #cdd8cf;
+
+  --elf-page-glow: radial-gradient(1100px 520px at 50% -10%,
+                     rgba(216,178,76,.12), transparent 68%),
+                   radial-gradient(700px 380px at 82% 4%,
+                     rgba(143,199,186,.06), transparent 70%);
+}
+
+/* --------------------------------------------------------------------------
+   Typography — Cinzel for the graven headings, Garamond for the tome.
+   -------------------------------------------------------------------------- */
+body {
+  --md-text-font-family: "EB Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+}
+
+.md-typeset {
+  font-size: 0.86rem;      /* Garamond runs small; give it room */
+  line-height: 1.72;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-family: "Cinzel", "Trajan Pro", Georgia, serif;
+  font-weight: 600;
+  color: var(--holly);
+  letter-spacing: .02em;
+  text-wrap: balance;
+}
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3 {
+  color: #e8ddc4;          /* warm silver-gold on the dark forge */
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--forge-gold);
+}
+[data-md-color-scheme="slate"] .md-typeset h1 {
+  color: var(--forge-gold);
+  text-shadow: 0 0 26px rgba(216,178,76,.18);   /* a faint forge-glow */
+}
+
+.md-typeset h2 {
+  margin-top: 2.4em;
+  padding-bottom: .28em;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* Section title on the home page — the workshop's name over its doors. */
+.md-typeset h1#celebrimbor {
+  font-size: 2.9rem;
+  letter-spacing: .08em;
+}
+
+/* --------------------------------------------------------------------------
+   The page ground — a faint forge-glow washing down from the top.
+   -------------------------------------------------------------------------- */
+.md-main {
+  background-image: var(--elf-page-glow);
+  background-repeat: no-repeat;
+}
+
+/* Header & nav — the holly-green lintel over the door. */
+.md-header {
+  border-bottom: 1px solid rgba(184,145,47,.28);
+}
+.md-header__title {
+  font-family: "Cinzel", Georgia, serif;
+  letter-spacing: .1em;
+  font-weight: 600;
+}
+.md-tabs {
+  border-bottom: 1px solid rgba(184,145,47,.14);
+}
+
+/* --------------------------------------------------------------------------
+   Links — gold, underlined only on hover like ink catching the light.
+   -------------------------------------------------------------------------- */
+.md-typeset a {
+  color: var(--md-typeset-a-color);
+  text-decoration-color: rgba(184,145,47,.35);
+  text-underline-offset: .18em;
+}
+.md-typeset a:hover {
+  color: var(--forge-gold-bright);
+  text-decoration-color: currentColor;
+}
+
+/* --------------------------------------------------------------------------
+   Decorative rule — a graven line with a ring-diamond at its centre.
+   Used for the `---` dividers that separate movements on a page.
+   -------------------------------------------------------------------------- */
+.md-typeset hr {
+  border: none;
+  height: 1.4em;
+  margin: 2.6em 0;
+  background: none;
+  position: relative;
+}
+.md-typeset hr::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--forge-gold-bright) 22%,
+    var(--forge-gold-bright) 78%,
+    transparent);
+  opacity: .5;
+}
+.md-typeset hr::after {
+  content: "\25C8";        /* ◈ — a faceted ring-stone */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--forge-gold-bright);
+  background: var(--md-default-bg-color);
+  padding: 0 .5em;
+  font-size: .9em;
+}
+
+/* --------------------------------------------------------------------------
+   Blockquotes — an illuminated margin note in the smith's own hand.
+   -------------------------------------------------------------------------- */
+.md-typeset blockquote {
+  border-left: 3px solid var(--forge-gold);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--forge-gold) 8%, transparent), transparent 60%);
+  color: var(--md-default-fg-color);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons — the primary is a ring of gold; the secondary, its outline.
+   -------------------------------------------------------------------------- */
+.md-typeset .md-button {
+  border-radius: 2px;
+  border-color: var(--forge-gold);
+  color: var(--forge-gold);
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: .04em;
+  transition: all .18s ease;
+}
+.md-typeset .md-button:hover {
+  background: var(--forge-gold);
+  border-color: var(--forge-gold);
+  color: var(--md-default-bg-color);
+  box-shadow: 0 0 22px -6px var(--forge-gold);
+}
+.md-typeset .md-button--primary {
+  background: var(--forge-gold);
+  border-color: var(--forge-gold);
+  color: var(--md-default-bg-color);
+}
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  color: #0e1512;
+}
+
+/* --------------------------------------------------------------------------
+   Cards (the two-family grid) — worktables in the smith's hall.
+   -------------------------------------------------------------------------- */
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  background: var(--parchment-raised);
+  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--forge-gold);
+  box-shadow: 0 10px 34px -22px var(--forge-gold);
+  transform: translateY(-2px);
+}
+
+/* --------------------------------------------------------------------------
+   Inline code & code blocks — runes on the workbench.
+   -------------------------------------------------------------------------- */
+.md-typeset code {
+  border-radius: 3px;
+  font-size: .82em;
+}
+.md-typeset pre > code {
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+}
+
+/* Tables — a ledger ruled in gold hairlines. */
+.md-typeset table:not([class]) {
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.md-typeset table:not([class]) th {
+  font-family: "Cinzel", Georgia, serif;
+  font-weight: 600;
+  font-size: .8em;
+  letter-spacing: .03em;
+  background: color-mix(in srgb, var(--forge-gold) 12%, var(--parchment-raised));
+  color: var(--holly);
+}
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
+  color: #e8ddc4;
+}
+
+/* Admonitions keep Material's shape; only their accent turns to gold/mithril
+   so a "note" reads like a scribe's aside, not a warning klaxon. */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 4px;
+  border-left-width: 3px;
+}
+
+/* Footer — the closing seal. */
+.md-footer-meta {
+  border-top: 1px solid rgba(184,145,47,.2);
+}
+
+/* A touch of gold on the search field and active nav, so the whole hall glows
+   by the same firelight. */
+[data-md-color-scheme="slate"] .md-nav__link--active,
+[data-md-color-scheme="slate"] .md-nav__link:focus,
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+  color: var(--forge-gold);
+}
+.md-nav__item .md-nav__link--active {
+  color: var(--forge-gold);
+  font-weight: 600;
+}

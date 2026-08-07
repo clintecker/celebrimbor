@@ -7,9 +7,10 @@ pip install celebrimbor              # core (click, rich, pyyaml)
 pip install "celebrimbor[commodity]"     # + ruff, mypy, pytest, coverage
 ```
 
-Celebrimbor runs the commodity tools as subprocesses and discovers them on your
-`PATH`, so they are *your* pinned versions, not ones celebrimbor drags in. The
-`[commodity]` extra is a convenience that installs a working set.
+celebrimbor doesn't bundle its own copies of the everyday tools (ruff, mypy,
+pytest, coverage). It runs the ones already on your `PATH`, so you keep the exact
+versions you've chosen — celebrimbor never drags in its own. The `[commodity]`
+extra is just a convenience: it installs a working set to get you going.
 
 Requires Python 3.11+.
 
@@ -19,10 +20,12 @@ Requires Python 3.11+.
 celebrimbor init
 ```
 
-This writes opinionated defaults into your `pyproject.toml` (ruff, mypy, pytest,
+This writes good defaults into your `pyproject.toml` (ruff, mypy, pytest,
 coverage), a `.pre-commit-config.yaml` whose one hook is `celebrimbor gate
---fast`, and a `tests/known-bad/` directory. It **never overwrites** a config
-section you already have — re-running it only appends what is missing.
+--fast`, and a `tests/known-bad/` directory. That last one holds *known-bad
+fixtures* — small examples of code that should be rejected, kept so you can prove
+your checks still catch them. `init` **never overwrites** a config section you
+already have; re-running it only adds what's missing.
 
 ```text
 your-project/
@@ -38,10 +41,11 @@ your-project/
 celebrimbor gate --fast
 ```
 
-commodity runs lint, types, format, the structure gates, known-bad provenance, and
-the marker grammar — targeting under ten seconds. On a conventional repo it goes
-green quickly; where it is red, each finding tells you the file, the line, and
-the fix.
+`--fast` is the quick pre-commit pass. It runs lint, types, formatting, the
+structure checks, a check that your known-bad fixtures are still caught, and the
+test-marker grammar — aiming to finish in under ten seconds. On a conventional
+repo it goes green quickly. Where it's red, each finding tells you the file, the
+line, and the fix.
 
 ```
 ✓ celebrimbor.lint            ruff reports no violations
@@ -53,7 +57,8 @@ the fix.
 ...
 ```
 
-The three stages:
+There are three stages — how deep a run goes. A quick pre-commit pass, a fuller
+pull-request pass, and the full merge-time pass:
 
 ```bash
 celebrimbor gate --fast    # pre-commit: lint, types, format, structure, fixtures  (~10s)
@@ -61,37 +66,48 @@ celebrimbor gate           # PR: adds coverage ratchet, invariants, impact      
 celebrimbor gate --full    # merge/release: adds mutation                           (as slow as it must be)
 ```
 
-## Turn on the obligation engine
+## Turn on the proving checks
 
-The obligation gates are opt-in — nothing here reddens until you author the map
-they read.
+So far you've run the everyday checks. The deeper *proving checks* — the ones
+that make your code prove it's what it claims — are opt-in. Nothing here turns
+red until you write the map they read, so your first day stays green.
 
 ```bash
 celebrimbor init --surfaces
 ```
 
-This runs role **inference** over your source and writes a pre-filled surface
-map at `.celebrimbor/surfaces.yaml`. Every row it is confident about is filled
-in and marked `inferred`; rows it is unsure about are left out entirely rather
-than guessed. Every inferred row is **red until you ratify it** — inference
-shrinks your job, it never manufactures green.
+That map is the **surface map**: a list of every public function in your code and
+the job you've assigned each one. This command guesses each function's job — its
+**role** (a parser parses, a verifier checks, and so on) — by reading your source,
+and writes a pre-filled map at `.celebrimbor/surfaces.yaml`. Every guess it's
+confident about is filled in and marked `inferred`. Where it's unsure, it leaves
+the row out rather than guess wrong. Every inferred row stays **red until you
+confirm it by hand** (you *ratify* it) — guessing shrinks your job, it never
+turns anything green on its own.
 
-Review the roles, then ratify them (this also pins each row to the current code):
+Review the roles, then ratify them. Ratifying also *pins* each row to the code as
+it stands today, so if someone later rewrites the function, the gate re-opens the
+question:
 
 ```bash
 celebrimbor ratify --all         # or: celebrimbor ratify myapp.parsing myapp.render
 ```
 
-Now `celebrimbor gate --fast` also runs the surface completeness, naming,
-evidence, and capability gates against your ratified map. See
+Now `celebrimbor gate --fast` also checks your ratified map: that every function
+is accounted for, that roles are named consistently, that each function's code
+actually matches its assigned job (the *evidence* check), and that no function
+reaches for parts of the outside world it isn't allowed to touch — the clock, the
+network, files — (the *capabilities* check). See
 [Adopting an existing app](guides/adoption.md) for the full walkthrough,
 including the producer and invariant ledgers.
 
 ## Use it from CI
 
-CI is the **pinned environment**: celebrimbor detects `CI=1` and treats it as a
-promise that the toolchain is present (a missing tool becomes red, not a skip)
-and as the only place ratchets may take a baseline.
+CI is the one environment celebrimbor treats as fully trustworthy. It detects
+`CI=1` and reads it as a promise that every tool is present — so a missing tool
+turns red instead of quietly skipping — and it's the only place a *ratchet* (a
+one-way gate, like test coverage, that can improve but can't quietly slip
+backward) is allowed to set its starting line.
 
 ```yaml
 # .github/workflows/gate.yml
@@ -100,8 +116,8 @@ and as the only place ratchets may take a baseline.
 - run: celebrimbor gate                      # PR stage
 ```
 
-Once you can see the enforced rules for a project at a glance with `celebrimbor
-explain`, you know exactly what a green run is promising.
+Run `celebrimbor explain` to see every rule a project enforces at a glance — then
+you know exactly what a green run is promising.
 
 ## Drive it from code
 

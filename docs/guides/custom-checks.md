@@ -1,9 +1,10 @@
 # Writing custom checks
 
-`@celebrimbor.check` is the one documented seam for app-specific checks. There is
-deliberately no exposed registry object to poke at — a raw registry invites app
-code to bypass registration, and the completeness guarantee is only as good as
-the claim that `@check` is the one door.
+`@celebrimbor.check` is the one supported way to add your own app-specific
+checks. There's deliberately no registry object you can reach in and edit
+directly — if there were, app code could add a check behind the runner's back,
+and celebrimbor's promise that *no check escapes* is only as good as the rule that
+`@check` is the single door in.
 
 ## The decorator
 
@@ -32,31 +33,33 @@ def check_manifest(ctx: celebrimbor.Context) -> celebrimbor.CheckResult:
     return celebrimbor.CheckResult.passed("myapp.manifest", "manifest is complete")
 ```
 
-Your check runs in the same ordered registry as the builtins, under the same
-guarantee that no check escapes the runner, and its result flows through the same
-fail-closed vocabulary.
+Your check runs in the same ordered list as the built-in checks, under the same
+promise that no check escapes the runner. Its result speaks the same
+*fail-closed* language too: when a check can't confirm something is right, it
+stops and refuses rather than passing it through.
 
 ## Make the CLI run it
 
-Registration happens by import side-effect, so `celebrimbor gate` only sees your
-check if its module gets imported. Tell the CLI which modules to import:
+The decorator registers your check the moment its module is imported — so
+`celebrimbor gate` only sees the check if something imports that module. Tell the
+CLI which modules to import:
 
 ```toml
 [tool.celebrimbor]
 check_modules = ["myapp.quality_checks"]
 ```
 
-The CLI imports each listed module (after the builtins, before the run), so your
-domain checks run through `celebrimbor gate` itself — the same one-line
-pre-commit hook and CI step as everyone else. The completeness check then covers
-your checks too: it runs *last* no matter when a check registered, so a check
-loaded this way still runs before it and is counted.
+The CLI imports each listed module (after the built-in checks, before the run
+starts), so your domain checks run through `celebrimbor gate` itself — the same
+one-line pre-commit hook and CI step everyone else uses. The completeness check
+then covers your checks too: it always runs *last*, no matter when a check was
+registered, so anything loaded this way runs before it and gets counted.
 
-A module that will not import is a **hard, fail-closed error**, not a silently
-smaller gate — a declared check that vanishes is the exact failure mode this
-harness exists to prevent. Without `check_modules`, the CLI runs only the
-builtins and your checks are absent, so this is the field that lets you *lean on*
-the CLI rather than wrap it.
+A module that won't import is a **hard error that fails the gate**, not a quietly
+smaller run — a declared check that disappears is the exact failure celebrimbor
+exists to prevent. Without `check_modules`, the CLI runs only the built-in checks
+and yours are simply absent. So this is the setting that lets you *lean on* the
+CLI instead of wrapping it in your own.
 
 ### Every parameter
 
@@ -69,8 +72,11 @@ the CLI rather than wrap it.
 | `family` | `Family.COMMODITY` (default — always runs) or `Family.OBLIGATION` (opt-in; use this if your check reads an authored ledger and should *skip* when it is absent) |
 | `tags` | optional labels for your own grouping |
 
-A check that reads a ledger you author should declare itself `obligation` so it
-skips (not fails) on a project that has not opted in:
+The `family` says what kind of check this is: an everyday one that always runs
+(`commodity`), or one of the proving checks that reads a ledger you write and
+should only run once a project has opted in (`obligation`). A check that reads a
+ledger you author should declare itself `obligation`, so on a project that hasn't
+opted in it *skips* rather than fails:
 
 ```python
 from celebrimbor import Family
@@ -87,14 +93,16 @@ def check_migrations(ctx): ...
 
 ## `falsified_by` is required
 
-There is no default. The framework will not let you register a gate without
-saying how you know the gate works. Pass the path or pytest node id of a negative
-fixture that turns the check red. Celebrimbor's own suite has a meta-test that
-resolves every `falsified_by` to a real test — so a promise you write here is one
-you have to keep.
+There's no default. celebrimbor won't let you register a check without saying how
+you know the check actually works — how you know it can be caught being wrong.
+That's a *falsifier*: a way the check could be shown to fail, in practice a test
+that genuinely turns it red when it should. Pass the path or pytest node id of a
+known-bad fixture that does exactly that. celebrimbor's own test suite has a
+meta-test that resolves every `falsified_by` to a real test — so a promise you
+write here is one you have to keep.
 
-If a falsifier does not exist *yet*, admit it explicitly with a review date,
-rather than silently:
+If that falsifier doesn't exist *yet*, say so out loud, with a review date,
+instead of leaving it silent:
 
 ```python
 from celebrimbor import Unproven
@@ -107,8 +115,8 @@ from celebrimbor import Unproven
 def check_wip(ctx): ...
 ```
 
-An `Unproven` is visible in every gate run and *expires* — past the review date
-it reddens. Debt with a deadline, never debt in silence.
+An `Unproven` shows up in every gate run and *expires* — past the review date it
+turns the gate red. Debt with a deadline, never debt in silence.
 
 ## The context
 
@@ -125,9 +133,10 @@ A check receives a `Context` with everything it is allowed to know:
   it across checks (this is how the builtin gates parse the AST once, not
   per-check, and is most of what keeps the fast stage under budget).
 
-A check must **not** branch on other checks' results — a check whose verdict
-depends on another's is a check whose falsifier no longer isolates it. Only the
-terminal completeness check may read the in-progress report.
+A check must **not** make its decision based on other checks' results. Once one
+check's verdict depends on another's, its falsifier no longer tests it on its own
+— you can't be sure what would actually turn it red. Only the final completeness
+check is allowed to read the run-in-progress.
 
 ### Findings carry location
 
@@ -146,8 +155,8 @@ celebrimbor.Finding(
 
 ## Adapting a "raise on failure" check
 
-If you are migrating an existing harness whose checks are zero-argument functions
-that raise, wrap them once:
+If you're moving over from existing tooling whose checks are zero-argument
+functions that raise an exception when they fail, wrap each one once:
 
 ```python
 def adapt(check_id, title, fn):
@@ -169,8 +178,8 @@ Everything the existing check does keeps working; only the wrapper is new.
 
 ## Returning a good result
 
-Use the constructors — they encode which fields each verdict requires. Which one
-you reach for is a short decision:
+Use the constructors — each one requires exactly the fields its verdict needs.
+Picking the right one is a short decision:
 
 ```mermaid
 flowchart TD
@@ -190,5 +199,6 @@ flowchart TD
 | `CheckResult.refused(id, summary, reason, remedy=...)` | could not check — the fail-closed path |
 | `CheckResult.skipped(id, reason)` | not applicable here — must have a reason |
 
-Do not reach for `passed` when you could not actually check something. Reach for
-`refused`. That is the whole discipline.
+Never reach for `passed` when you couldn't actually check something. Reach for
+`refused` instead. That one habit — refuse when you can't prove, don't guess green
+— is the whole discipline.

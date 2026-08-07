@@ -1,8 +1,8 @@
 # Vacuity
 
-A commodity gate over your *assertions* — because an assertion is the smallest
-claim a test makes, and an assertion that holds for every input makes no claim
-at all.
+One of the everyday checks watches your *assertions* — because an assertion is the
+smallest claim a test makes, and an assertion that holds for every possible input
+makes no claim at all.
 
 ## Why a tautology proves nothing
 
@@ -13,17 +13,18 @@ def test_orders_have_customers():
 ```
 
 `assert True` passes no matter what `load_orders` returns. So does `assert x == x`,
-and so does `assert result or True`. Each is a *tautology*: true for every input,
-with no reachable false case. A test resting on one can never turn red, which is
-exactly the blindness the rest of celebrimbor exists to catch — here, one level
-down, inside the assertion itself. It is the same contradiction the
-[role-evidence gate](surface.md) names in a verifier whose every return is truthy:
-a claim with no failing path is not a claim.
+and so does `assert result or True`. Each is a *tautology* — a statement that's
+true for every input, with no way to ever come out false. A test resting on one
+can never turn red, which is exactly the blindness the rest of celebrimbor exists
+to catch, now one level down, inside the assertion itself. It's the same
+contradiction the [role-evidence gate](surface.md) names in a verifier whose every
+return is truthy: a claim with no failing path isn't a claim.
 
-`celebrimbor.vacuity` reads every `.py` under both the source tree and the test
-tree and reddens on any `assert` whose condition is provably true for every
-input. It is a `commodity` gate — no authored ledger, green on a clean repo —
-and it runs at the `FAST` stage because it is pure AST.
+`celebrimbor.vacuity` reads every `.py` file under both your source tree and your
+test tree and reddens on any `assert` whose condition is provably true for every
+input. It's an everyday check — no ledger to author, green on a clean repo — and
+it runs at the `FAST` stage because it only reads your code's structure (its AST),
+never runs it.
 
 ## What it fires on
 
@@ -33,18 +34,18 @@ Only three syntactically closed shapes, each true for every input:
 |---|---|---|
 | a constant truthy literal | `assert True`, `assert 1`, `assert "x"`, `assert (1, 2)` | holds for every input |
 | a value compared to itself | `assert x == x`, `assert self.a is self.a` | true regardless of the value |
-| an `or` short-circuiting to a truthy constant | `assert e or True`, `assert True or e` | the disjunction is truthy no matter what `e` is |
+| an `or` short-circuiting to a truthy constant | `assert e or True`, `assert True or e` | the whole thing is truthy no matter what `e` is |
 
 Self-comparison is restricted to **pure operands** — names, attributes, and
-constants. `assert f() == f()` is left alone, because a call may have side
-effects and is not the same expression evaluated twice.
+constants. `assert f() == f()` is left alone, because a call may have side effects
+and isn't the same expression evaluated twice.
 
 ## What it never fires on
 
-Conservatism is the whole point: a vacuity gate that fires on a real assertion
-trains people to suppress it, and a suppressed gate is a disabled gate. So when
-the truth of an assertion depends on any value, the gate abstains. All of these
-have a reachable false case and are **never** flagged:
+Being conservative here is the whole point: a vacuity check that fires on a real
+assertion trains people to suppress it, and a suppressed check is a disabled check.
+So whenever the truth of an assertion depends on any actual value, the gate holds
+back. All of these have a reachable false case and are **never** flagged:
 
 ```python
 assert x == y            # two different values
@@ -57,16 +58,17 @@ assert x != x             # always FALSE — a contradiction, not a tautology
 
 ## Exclusions and fail-closed posture
 
-- **Known-bad fixtures are skipped.** `tests/known-bad/` holds deliberately
-  broken source, and one of those files failing to parse must not take the run
+- **Known-bad fixtures are skipped.** `tests/known-bad/` holds deliberately broken
+  source, and one of those files failing to parse must not take the whole run
   down.
 - **The configured `exclude` globs are honoured** — the same set the surface
   inventory uses.
-- **An unparseable file refuses.** The gate is AST-only, so a file it cannot
-  read (and that is *not* a known-bad fixture) is a claim it cannot establish:
-  `REFUSED`, never a quiet pass.
+- **An unparseable file refuses.** The gate only reads structure, so a file it
+  can't read (and that *isn't* a known-bad fixture) is a claim it can't establish:
+  it returns `REFUSED` rather than waving the file through. When it can't prove the
+  file is clean, it stops — it fails closed.
 
-Its falsifier is
-`tests/negative/test_vacuity_gate.py::test_tautological_assert_is_red` — the
-fixture that proves the gate turns red on `assert True` — and celebrimbor holds
-its own suite to it with zero grandfathered breaches.
+Its falsifier — the way this gate itself can be caught failing to do its job — is
+`tests/negative/test_vacuity_gate.py::test_tautological_assert_is_red`, the fixture
+that proves the gate turns red on `assert True`. celebrimbor holds its own suite to
+it, with zero grandfathered breaches.

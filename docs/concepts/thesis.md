@@ -1,22 +1,31 @@
 # The thesis
 
-Celebrimbor is **invariant-driven design as a framework**: it removes the
-epistemic vacuum where plausible-but-wrong code lives.
+Celebrimbor is built on one idea: **make your code prove it isn't quietly
+broken, and stop when it can't.**
 
-The one-paragraph version: a claim a system cannot contradict is a claim it will
-eventually get wrong. AI-generated code — which optimizes for plausibility —
-lives in exactly that vacuum. Celebrimbor's job is to make every unit of an
-application **carry its own falsifier** and to make the gate **fail closed**:
-refuse when it cannot prove, never estimate.
+The one-paragraph version: a claim your code can't be caught getting wrong is a
+claim it will eventually get wrong. AI-written code is especially prone to this,
+because a language model is built to produce something that *looks* right — and
+looks-right is exactly where a hidden flaw survives. So celebrimbor holds every
+part of your application to one rule: it must carry a way it could be caught being
+wrong — in practice, a test that genuinely fails when the code breaks. We call
+that a *falsifier*. And the gate — the single command that runs every check —
+**fails closed**: when it can't prove something is right, it stops and refuses
+rather than waving the code through.
 
-Three principles fall out of that, and every design decision in the codebase
-serves them.
+That is the lesson the tool is named for. Celebrimbor forged the Rings of Power
+and was deceived into hiding a flaw he couldn't see, by a visitor who looked
+trustworthy — so never trust a thing because it looks right; make it prove it
+isn't secretly flawed.
+
+Three principles follow from that, and every design decision in the code serves
+them.
 
 ## Self-falsifying claims
 
-A unit that asserts a property must be forced to prove it. This is not a slogan
-— it is a required argument. The `@check` decorator has no default for
-`falsified_by`; you cannot register a gate without naming how it can fail:
+If a piece of code asserts something, it has to prove it — and that proof isn't
+optional, it's a required argument. The `@check` decorator has no default for
+`falsified_by`; you can't register a check without naming how it can fail:
 
 ```python
 @celebrimbor.check(
@@ -27,44 +36,49 @@ A unit that asserts a property must be forced to prove it. This is not a slogan
 def check_manifest(ctx): ...
 ```
 
-The same shape recurs:
+The same shape shows up everywhere:
 
-- A `producer` must name a `verifier`, and that verifier must name a negative
-  fixture that turns it red. You cannot inherit a verifier that inspects nothing.
-- A declared role is checked against the code (the [evidence gate](../gate/surface.md#evidence)),
-  so a `verifier` that can never fail is refused.
+- A `producer` — a function that builds an artifact — must name a `verifier` that
+  inspects what it built, and that verifier must name a kept example of the bad
+  case that turns it red (a *negative fixture*). You can't inherit a verifier that
+  checks nothing.
+- The job you assign a function (its *role*) is checked against the actual code
+  (the [evidence gate](../gate/surface.md#evidence)), so a `verifier` that can
+  never fail is refused.
 
-The pattern is fractal: the same discipline the harness applies to your code, it
-applies to its own gates, and to [the gates on those gates](../gate/meta.md).
+The pattern repeats at every level: the same discipline the tool applies to your
+code, it applies to its own checks, and to [the checks on those
+checks](../gate/meta.md).
 
 ## Fail closed
 
-When the harness cannot establish something, it goes red — it never estimates,
-defaults, or passes. A missing config file, an unparseable module, a tool that
-is absent in a trusted environment, a git diff it cannot compute: all of these
-**refuse**, distinct from both *pass* and *fail*. "We could not check" must never
-silently become "there is nothing wrong."
+When celebrimbor can't establish something, it goes red — it never estimates,
+defaults, or passes. A missing config file, a module it can't parse, a tool
+that's absent where it was promised, a git diff it can't compute: all of these
+**refuse**, which is a distinct outcome from both *pass* and *fail*. "We couldn't
+check" must never quietly turn into "there's nothing wrong."
 
-This is enforced in the type system, once, so no engine can forget it: results
-are constructed through a vocabulary where a skipped check must carry a reason, a
-failure must carry a finding, and an empty gate is red because it proved nothing.
-See [Fail closed](fail-closed.md).
+This is enforced in the type system, in one place, so no check can forget it:
+results are built through a small vocabulary where a skipped check has to carry a
+reason, a failure has to carry a specific finding, and a gate that ran nothing is
+red because it proved nothing. See [Fail closed](fail-closed.md).
 
 ## Invariants over checks
 
-Prefer making an illegal state *unrepresentable* over checking for it after the
-fact. The clearest example: there is no "unclassified" role. An earlier design
-had one, and it was deleted — because a role that means "I don't know" could be
-ratified, and every gate keying on role would then read a real, ratified,
-meaningless value. `Role.parse` now *raises* on anything outside the eight; the
-illegal value cannot be constructed, let alone ratified. Inference abstains by
-producing *nothing*; an unclassifiable module simply gets no row, and the
-completeness audit reddens the gap.
+Wherever you can, make a broken state impossible to represent in the first place,
+rather than checking for it after the fact. The clearest example: there is no "I
+don't know" role. An earlier design had one, and it was deleted — because a role
+that means "unclassified" could still be confirmed by hand (*ratified*), and every
+check that keys on role would then read a real, signed-off, meaningless value.
+`Role.parse` now *raises* on anything outside the eight roles; the illegal value
+can't be built, let alone ratified. When the tool can't tell what a function does,
+it produces *nothing* — an unclassifiable module simply gets no row, and the
+completeness check reddens the gap.
 
 ## The compass
 
-When a design decision is unclear, three questions resolve it — and a "no" to any
-is a "no" to the feature:
+When a design decision is unclear, three questions settle it — and a "no" to any
+one is a "no" to the feature:
 
 ```mermaid
 flowchart TD
@@ -77,5 +91,5 @@ flowchart TD
     Q3 -->|yes| KEEP([keep])
 ```
 
-If a proposed feature would let a unit assert something it cannot be forced to
-prove, it is the wrong feature — no matter how convenient.
+If a proposed feature would let a piece of code assert something it can't be
+forced to prove, it's the wrong feature — no matter how convenient.
