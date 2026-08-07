@@ -1,28 +1,34 @@
 # Roadmap
 
-Celebrimbor's thesis is fixed: *a claim a system cannot contradict is a claim it
-will eventually get wrong.* Everything below serves that one idea. Nothing here
-adds a score, a grade, or a knob that lets a run pass without proving what it
-claims — those would be the exact estimating behaviour the gate exists to refuse.
+One idea holds this whole tool together: *a claim your code can't be caught
+getting wrong is a claim it will eventually get wrong.* Everything below serves
+that idea. Nothing here adds a score, a grade, or a knob that would let a run pass
+without proving what it claims — those would be exactly the guessing the gate
+exists to refuse.
 
-The work divides along two axes. **Depth** — prove things the gate currently
-cannot. **Reach** — put the gate in front of more code, with less friction to
-adopt. A feature earns a place on this list only if it fails closed, keeps human
-ratification as the one sanctioned judgment, and moves a check *toward* an
-invariant rather than toward an attestation.
+The work splits two ways. **Depth** means proving things the gate can't prove yet.
+**Reach** means putting the gate in front of more code, with less friction to
+adopt it. A feature earns a place on this list only if it *fails closed* (when it
+can't prove something, it stops and refuses rather than waving it through), keeps
+the one human judgment call — you confirming each function's job by hand — as the
+only sanctioned judgment, and moves a check *toward* something the code must prove
+rather than something it merely swears to.
 
 ## The through-line: the acceptance gate for AI-authored code
 
-The dominant failure mode of machine-generated code is **plausibility without
-falsifiability** — code that is well-shaped and passes the happy path, but whose
-falsifiers are absent or vacuous: a verifier every return makes truthy, a test
-whose mock stubs the thing under test, an `xfail` with a shrug for a reason.
+The way machine-generated code usually fails is that it *looks* right without any
+way to be caught if it's wrong — well-shaped, passing the happy path, but with no
+real *falsifier* behind it. (A falsifier is a way the code could be caught being
+wrong: in practice, a test that genuinely fails when the code breaks.) The
+falsifiers are missing or hollow: a checker whose every path returns something
+truthy, so it can never turn red; a test whose stand-in fake replaces the very
+thing it claims to test; a skipped test with a shrug for a reason.
 
-That is precisely the epistemic vacuum celebrimbor already refuses for its own
-roles. The next year of work turns that latent capability into the headline: the
-gate an agent's code must clear before a human spends attention on it. Four of
-the five tracks below feed this story; it is the spine of the roadmap, not a
-separate feature.
+That empty space — a claim with nothing that could ever contradict it — is exactly
+what celebrimbor already refuses to accept in its own code. The next year of work
+turns that into the headline feature: the gate an agent's code has to clear before
+a person spends any attention on it. Four of the five tracks below feed this one
+story. It is the spine of the roadmap, not a side feature.
 
 ## The five tracks
 
@@ -36,44 +42,47 @@ separate feature.
 
 ## Sequencing
 
-The tracks are not independent. Three of them share machinery, so build order
-matters more than raw priority.
+The tracks aren't independent. Three of them share the same underlying machinery,
+so the order we build in matters more than raw priority.
 
-1. **The agent verdict (`--format=agent`).** Pure serialisation of the report
-   the gate already produces — every refusal becomes one actionable work item,
-   and a green run emits zero. Near-zero risk, it is the wedge that repositions
-   the whole tool, and it validates the core bet before a line of new detection
-   is written: if no agent loop actually consumes the verdict, we learn that
-   first. See the [design doc](design/agent-acceptance-gate.md).
-2. **The vacuity gate.** Cheap, AST-only, and a *shared foundation*: both the
-   agent-acceptance gate and falsifier generation consume the same
-   "does this claim have a reachable failing path?" engine. Build it once — but
-   only after the verdict has proven the loop is real.
-3. **`celebrimbor watch`.** Kills the surface-map maintenance tax *and* yields the
-   warm-inventory engine that makes an agent loop over the verdict fast. One
-   investment, two payoffs.
-4. **Falsifier generation** — scaffolding first, then a self-verifying
-   mutation-guided core (which requires wiring live mutation execution), and only
-   then, behind that mechanical filter, an optional LLM drafter.
-5. **The language server** — once `watch` has proven the incremental engine.
-6. **Polyglot facade extraction** — de-risk the seam by re-pointing the Python
-   backend through a language-neutral facade, shipping nothing new, before any
-   second grammar exists.
-7. **The runtime sync gate** — the one honest, fail-closed slice of runtime
-   invariants; it never enters a production hot path.
+1. **The agent verdict (`--format=agent`).** Just a machine-readable printout of
+   the report the gate already produces — every refusal becomes one clear work
+   item, and a green run produces none. Almost no risk, it repositions the whole
+   tool, and it tests the core bet before we write a line of new detection: if no
+   agent loop actually uses the verdict, we find that out first. See the
+   [design doc](design/agent-acceptance-gate.md).
+2. **The vacuity gate.** ("Vacuity" here means a claim so hollow it can't ever be
+   contradicted.) Cheap, reads only the code's structure, and a *shared
+   foundation*: both the agent-acceptance gate and falsifier generation lean on
+   the same engine answering one question — "does this claim have any path that
+   could actually fail?" Build it once, but only after the verdict has shown the
+   loop is real.
+3. **`celebrimbor watch`.** Removes the ongoing cost of keeping your surface map
+   up to date, *and* produces the always-warm engine that makes an agent loop over
+   the verdict fast. One investment, two payoffs.
+4. **Falsifier generation** — the starting scaffolds first, then a self-checking
+   core guided by mutation testing (which needs live mutation runs wired in), and
+   only then, behind that mechanical filter, an optional AI-model drafter.
+5. **The language server** — once `watch` has proven out the incremental engine.
+6. **Cross-language groundwork** — lower the risk by re-routing the current Python
+   backend through a language-neutral layer, shipping nothing new, before any
+   second language exists.
+7. **The runtime sync gate** — the one honest, fail-closed slice of checking
+   promises in the running system; it never sits in a performance-critical path.
 
 ## What is deliberately not here
 
 - **A quality score.** A single number gets trusted, gamed, and averaged into
-  meaninglessness — the estimating posture the tool refuses. The honest analog
-  already exists: the dated ledger of `Unproven` admissions, whose trend is *how
-  many gaps there are and how old they are*, not a grade.
-- **Auto-ratify.** Anything that pins a role or accepts a proof without a human
-  hands away the one judgment call the whole design is built to protect.
-- **Log-and-continue at runtime.** A contract that detects a contradiction and
-  proceeds anyway has looked at a falsified claim and decided to trust it. That
-  is the silent pass with extra steps.
+  meaninglessness — the guessing this tool refuses. The honest version already
+  exists: a dated list of the gaps you've openly admitted (`Unproven`), where what
+  matters is *how many gaps there are and how old they are*, not a grade.
+- **Confirming roles automatically.** Anything that locks in a function's job, or
+  accepts a proof, without a human hands away the one judgment call the whole
+  design exists to protect.
+- **Log-and-continue at runtime.** A promise-check that spots a contradiction and
+  carries on anyway has looked at a broken claim and decided to trust it. That's
+  the silent pass with extra steps.
 
-Each track carries its own kill switch, documented in its design doc: the
-condition under which building more of it would betray the thesis rather than
+Each track carries its own kill switch, written down in its design doc: the
+condition under which building more of it would betray the core idea rather than
 serve it.

@@ -1,34 +1,36 @@
 # Stages and families
 
-`celebrimbor gate` is one command. Two **independent** things decide what it
-runs. Keep them apart:
+`celebrimbor gate` is one command. Two separate things decide what it runs, and
+it helps to keep them apart. One is *how deep this particular run goes*; we call
+that the **stage**. The other is *what kind of check each one is*; we call that
+the **family**.
 
 | Axis | Question | Values | Where it lives |
 |---|---|---|---|
 | **Stage** | *How deep should this run go?* | `fast` → `default` → `full` | the `--fast` / `--full` flags |
 | **Family** | *What kind of check is this?* | `commodity` / `obligation` | a property of each check |
 
-The two axes are different in nature, which is the whole reason they get
-different words. **Stage is ordinal** — a scale, `fast` ⊂ `default` ⊂ `full`, and
-a fourth, deeper stage is conceivable. **Family is categorical** — a check either
-needs an authored ledger (`obligation`) or it doesn't (`commodity`); there is no
-third answer and no "in between," so there are exactly two families, forever.
-(This is why they aren't numbered: `commodity`/`obligation` are kinds, and
-numbers `0`/`1`/`2`… would falsely suggest a sequence that could grow.)
+The two are different in kind, which is why they get different words. **Stage is
+a scale** — `fast` fits inside `default` fits inside `full`, and you could
+imagine an even deeper fourth stage someday. **Family is a yes-or-no split** — a
+check either needs a file of promises you wrote by hand (`obligation`) or it
+doesn't (`commodity`). There's no middle ground and no third answer, so there are
+exactly two families, always. That's also why they aren't numbered: `0`/`1`/`2`…
+would hint at a sequence that could grow, and this one never will.
 
-A single check has one of each. The `obligation` `invariants` gate is in the
-obligation family, and runs at the `default` stage. Family is about the check;
-stage is about the run.
+Every check carries one value of each. The `invariants` check, for example, is
+in the `obligation` family and runs at the `default` stage. Family describes the
+check itself; stage describes the run it lands in.
 
 !!! note "check vs. gate"
     A **check** is one registered unit (`@check`, one line of gate output). Each
-    check is a **gate** — it can stop the run — so the two words name the same
-    thing; "the gate" (singular) is the whole run of them together.
+    check can stop the run — that makes it a **gate** too — so the two words
+    name the same thing. "The gate" (singular) is all of them run together.
 
 ## The stage axis — how deep a run goes
 
-Each stage runs every check assigned to it *or a cheaper one*, so they nest:
-`full` ⊇ `default` ⊇ `fast`.
+Pick a stage and you run every check assigned to it *plus every cheaper one*, so
+the stages nest: `full` contains `default`, which contains `fast`.
 
 ```bash
 celebrimbor gate --fast    # fast stage    — pre-commit    — target < ~10s
@@ -36,7 +38,7 @@ celebrimbor gate           # default stage — pull request  — target < ~2min
 celebrimbor gate --full    # full stage    — merge/release — as slow as it must be
 ```
 
-Each stage *contains* the cheaper one, so nothing you ran at pre-commit is
+Because each stage contains the cheaper one, nothing you ran at pre-commit gets
 skipped later:
 
 ```mermaid
@@ -49,13 +51,15 @@ flowchart TD
 
 ## The family axis — what kind of check
 
-- **`commodity` — the commodity ladder.** Lint, types, format, structure,
-  known-bad, marker grammar. Off-the-shelf rigor wired with opinionated
-  defaults. Needs no ledger and passes on a fresh repo — the adoption wedge.
-- **`obligation` — the obligation engine.** Surface roles, capabilities,
-  producers, invariants, impact, ratchets, imports. Opt-in and authored: each
-  obligation gate *skips with a reason* until you create the ledger it reads, so
-  it never reddens on day one.
+- **`commodity` — the everyday checks.** Lint, types, formatting, structure,
+  known-bad, marker grammar: the ordinary checks nearly every project wants,
+  set up for you with good defaults. They need nothing from you and pass on a
+  fresh repo, which is why they're the easy way in.
+- **`obligation` — the proving checks.** Surface roles, capabilities, producers,
+  invariants, impact, ratchets, imports: the deeper checks that make your code
+  prove it's what it claims. Each one *skips with a reason* until you write the
+  file of promises it reads, so none of them turns your first day red. You opt
+  in when you're ready.
 
 ## Every check, on both axes
 
@@ -94,13 +98,16 @@ celebrimbor gate — fast stage
   RED   9 proved   1 failed   1 refused   1 skipped   0.31s
 ```
 
-- `✓` proved, `✗` failed (with a finding), `⊘` refused (could not check — also
+- `✓` proved, `✗` failed (with a finding), `⊘` refused (couldn't check — also
   red), `–` skipped (with its reason).
-- **`⊘` refused vs `–` skipped** is the distinction to internalize: *refused*
-  means the gate could not reach a conclusion (missing tool, unparseable file,
-  no diff base) and is **red**; *skipped* means an obligation gate has no ledger
-  to read yet, which is opt-in and **not red**. "I couldn't check" and "there is
-  nothing to check here" are different answers, and only the first fails.
+- **`⊘` refused vs `–` skipped** is the one distinction worth learning. *Refused*
+  means the gate couldn't reach a conclusion at all — a missing tool, a file it
+  can't read, no baseline to diff against — so it stops and turns **red** rather
+  than pretend all is well. *Skipped* means a proving check simply has no file of
+  promises to read yet; that's opt-in and stays green. "I couldn't check" and
+  "there's nothing to check here" are different answers, and only the first one
+  fails. This is the tool refusing to guess: when it can't prove something, it
+  says so out loud instead of waving it through.
 - `--plain` drops color for logs and CI annotations; `-v` widens findings and
   shows hints and skips.
 - Exit code is `0` only if every check that ran proved its claim.

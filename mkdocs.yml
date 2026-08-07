@@ -9,21 +9,25 @@ copyright: Copyright &copy; 2026 Clint Ecker — MIT License
 
 theme:
   name: material
+  font:
+    # Cinzel (headings) is imported in stylesheets/extra.css; EB Garamond sets
+    # the body like a page from a tome, JetBrains Mono the runes on the bench.
+    text: EB Garamond
+    code: JetBrains Mono
+  # The palette is defined in stylesheets/extra.css (an Elven-smith's forge:
+  # parchment by day, star-lit forge by night). We keep only the schemes and the
+  # light/dark toggle here; the colours themselves are overridden there.
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: deep purple
-      accent: deep purple
       toggle:
         icon: material/weather-night
-        name: Switch to dark mode
+        name: Kindle the forge (dark)
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: deep purple
-      accent: purple
       toggle:
         icon: material/weather-sunny
-        name: Switch to light mode
+        name: Return to daylight (light)
   features:
     - navigation.sections
     - navigation.top
@@ -77,7 +81,7 @@ nav:
       - celebrimbor on celebrimbor: concepts/self-hosting.md
   - The gate:
       - Stages & families: gate/stages-and-families.md
-      - The commodity ladder: gate/commodity.md
+      - The everyday checks: gate/commodity.md
       - Surface roles: gate/surface.md
       - Capabilities: gate/capabilities.md
       - Ledgers: gate/ledgers.md
@@ -96,6 +100,9 @@ nav:
       - Where celebrimbor is going: roadmap.md
       - "Design: the agent-acceptance gate": design/agent-acceptance-gate.md
   - Changelog: changelog.md
+
+extra_css:
+  - stylesheets/extra.css
 
 extra:
   social:

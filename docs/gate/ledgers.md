@@ -1,19 +1,25 @@
 # Ledgers
 
-Three obligation gates read declarative ledgers and validate them for *referential
-integrity* against the code — not merely parsing them, but checking every
-reference resolves and failing on drift. A ledger that can fall out of step with
-the code without anyone noticing is a ledger nobody trusts.
+A ledger is a written record you keep next to your code — a list of promises and
+the code that keeps each one. Three of celebrimbor's proving checks (the deeper
+checks that make your code prove itself) read these records and hold them to the
+code. They don't just read each line: they confirm every name in the record
+points at something real, and they go red the moment the record and the code
+drift apart. A record that can quietly fall out of step with the code is a record
+nobody can trust.
 
 ## Producers — the no-blind-verifier gate
 
-`celebrimbor.producers` enforces one rule: **you cannot inherit a verifier that
-inspects nothing.** A `producer` makes an artifact, and the only thing that makes
-an artifact trustworthy is a verifier that would go red if the artifact were
-wrong. So every producer must name, on the record:
+`celebrimbor.producers` enforces one rule: a function that builds something
+can't be trusted on its own word. A `producer` is a function whose job is to
+build an artifact — a file, a report, a bundle. The only thing that makes that
+artifact trustworthy is a `verifier` (a function whose job is to check something)
+that would turn red if the artifact were wrong. So every producer has to name, on
+the record:
 
 - the `verifier` that inspects its artifact, and
-- a `negative_fixture` — a test proving that verifier turns red on a bad artifact.
+- a `negative_fixture` — a kept example of a bad artifact, with a test proving
+  that verifier turns red on it.
 
 ```yaml
 # .celebrimbor/producers.yaml
@@ -28,9 +34,10 @@ pending:
     review_by: 2026-09-01
 ```
 
-The gate checks the verifier resolves to a real callable *classified as a
-verifier*, and the fixture exists. A producer with no entry can sit in `pending`
-— but visibly, with a review date, on an allowlist that expires.
+The check confirms the named verifier is real code that you've actually
+classified as a verifier, and that the fixture exists. A producer you haven't got
+to yet can sit in `pending` — but out in the open, with a review date, on a list
+that expires.
 
 ```mermaid
 flowchart TD
@@ -45,14 +52,17 @@ flowchart TD
 ```
 
 !!! note "Override granularity"
-    The producers it demands entries for come from the module default *plus*
-    per-callable overrides — so a `producer` introduced by a single override on
-    an otherwise `pure` module is caught. Missing that would make the cheapest
-    way to ship an unchecked artifact a one-line override.
+    celebrimbor works out which functions are producers from the module's default
+    role *plus* any per-function overrides — so a lone `producer` you flag by hand
+    inside an otherwise `pure` module still needs its entry. Miss that, and the
+    cheapest way to slip an unchecked artifact past the gate would be a one-line
+    override.
 
 ## Invariants
 
-`celebrimbor.invariants` validates a ledger of the promises your system makes:
+`celebrimbor.invariants` checks a record of the promises your system makes — the
+things that must always stay true, whatever else changes. We call each one an
+*invariant*:
 
 ```yaml
 # .celebrimbor/invariants.yaml
@@ -72,33 +82,35 @@ invariants:
     enforced_by: myapp.posts:check_slug_unique
 ```
 
-Every named `enforced_by` must resolve to a real callable, and every `critical`
-invariant must keep a real `negative_proof`. A promise whose enforcer has been
-renamed or deleted turns the gate red — a promise nobody enforces is not a
-promise.
+Every `enforced_by` name has to point at real code, and every `critical` promise
+has to keep a real `negative_proof` — a kept example of the promise being broken,
+with a test that catches it. If the code that enforces a promise is renamed or
+deleted, the check goes red: a promise nobody enforces is not a promise.
 
-`negative_proof` may be a single string or a **list** — an invariant can be
-falsified several independent ways, and each named proof must exist (a
-named-but-deleted proof is drift, just like a renamed enforcer). `limitations`
-records the cases the promise deliberately does not cover — declared, reviewable
-debt — and, with [`markers_cite_limitations`](fixtures.md#citing-limitations),
-becomes the vocabulary a suppressed test must cite.
+`negative_proof` can be a single test or a **list** of them — a promise can be
+caught being broken in several independent ways, and each named proof has to exist
+(a proof you named and then deleted is drift, just like a renamed enforcer).
+`limitations` records the cases the promise knowingly does *not* cover — debt
+you've written down and can review — and, with
+[`markers_cite_limitations`](fixtures.md#citing-limitations), it becomes the list
+of allowed excuses a suppressed test must point to.
 
-This is the producer ledger generalized: a producer ledger is an invariant
-ledger specialized to "the artifact is correct."
+This is the producer record, generalized: a producer record is just an invariant
+record narrowed to a single promise — "the artifact is correct."
 
 !!! tip "Docs that cannot lie"
-    The invariant ledger renders to human-readable markdown — a living list of
-    the promises your system makes. It cannot drift into fiction, because the
-    gate has already checked every line of it against the code. Documentation
-    validated by a gate is the only documentation that stays true.
+    The invariant record renders to plain, readable markdown — a living list of
+    the promises your system makes. It can't drift into fiction, because the gate
+    has already checked every line of it against the code. Documentation that a
+    gate keeps honest is the only kind that stays true.
 
 ## The impact gate
 
-`celebrimbor.impact` reads the invariant ledger *differentially*, against a git
-diff. It asks a question about *change*: when you modify a module that decides or
-attests something — a verifier, producer, parser, normalizer, or adapter — is
-there a recorded promise governing it?
+`celebrimbor.impact` reads the invariant record against a git diff — not the whole
+tree, but only what *changed*. This is the change-impact check, and it asks one
+question about your edit: when you touch a module that decides or vouches for
+something — a verifier, producer, parser, normalizer, or adapter — is any recorded
+promise watching over it?
 
 ```mermaid
 flowchart TD
@@ -111,14 +123,16 @@ flowchart TD
 ```
 
 A changed [policy-role](../concepts/roles.md#policy-roles-and-the-impact-gate)
-module with no invariant naming it as an enforcer is the gap, and it reddens.
-The policy roles are `parser`, `normalizer`, `verifier`, `producer`, `adapter`,
-and `orchestrator` by default; set `policy_roles` in config to match an existing
-harness's set. This surfaces the silent alteration of a guarantee, made in a
-place with no invariant watching it.
+module — one whose job is to decide or vouch for something — with no invariant
+naming it as an enforcer is the gap, and it turns the check red. By default those
+roles are `parser`, `normalizer`, `verifier`, `producer`, `adapter`, and
+`orchestrator`; set `policy_roles` in config to match the set your project already
+uses. What this catches is a guarantee quietly changed in a spot where no promise
+was watching.
 
 !!! important "Fail closed on an unknowable diff"
-    If the changed-file set cannot be determined — not a repo, git absent, an
-    unresolvable base — the gate **refuses**. It does not treat "I could not tell
-    what changed" as "nothing changed", because that is the estimate that lets a
-    policy change slip through on the one run where git was unhappy.
+    If celebrimbor can't work out which files changed — not a repo, git absent, a
+    base it can't resolve — the gate **refuses** rather than guessing: it fails
+    closed. It won't treat "I couldn't tell what changed" as "nothing changed,"
+    because that guess is exactly what would let a policy change slip through on
+    the one run where git was having a bad day.

@@ -4,28 +4,30 @@
 celebrimbor [COMMAND] [OPTIONS]
 ```
 
-Five commands. The whole product surface is deliberately small — a CLI that grows
-subcommands is one that has started asking you to learn it.
+Five commands. The whole tool is kept small on purpose — a CLI that keeps
+sprouting subcommands is one that has started asking you to learn it.
 
 ## `celebrimbor init`
 
-Scaffold the quality ladder into a project.
+Set up the quality checks in a project.
 
 ```bash
 celebrimbor init [--surfaces] [--root DIR] [--force]
 ```
 
-- Writes opinionated `ruff`/`mypy`/`pytest`/`coverage` config into `pyproject.toml`,
-  a `.pre-commit-config.yaml` whose one hook is `celebrimbor gate --fast`, and a
-  `tests/known-bad/` directory.
-- `--surfaces` also runs role inference and writes the pre-filled, ratify-me
-  surface map (obligation).
-- Never overwrites a config section you already have; re-running only appends
-  what is missing. `--force` overwrites sections celebrimbor owns.
+- Writes good default config for `ruff`/`mypy`/`pytest`/`coverage` into
+  `pyproject.toml`, a `.pre-commit-config.yaml` whose one hook runs
+  `celebrimbor gate --fast`, and a `tests/known-bad/` directory — the folder that
+  holds kept examples of code that should be rejected.
+- `--surfaces` also guesses the job each function does (its *role*) and writes a
+  pre-filled map for you to confirm by hand. This is one of the deeper "proving"
+  checks you opt into, so it never lands on you by surprise.
+- Never overwrites a config section you already have; re-running only fills in
+  what is missing. `--force` overwrites the sections celebrimbor owns.
 
 ## `celebrimbor gate`
 
-Run the gate.
+Run the gate — the single command that runs every check.
 
 ```bash
 celebrimbor gate [--fast | --full] [OPTIONS]
@@ -45,8 +47,8 @@ celebrimbor gate [--fast | --full] [OPTIONS]
 | `--update-baselines` | re-baseline the coverage, mutation, **and structure** ratchets (requires `--reason`, pinned env) |
 | `--reason TEXT` | why a baseline is being moved — recorded |
 
-Exit code is `0` only if every check that ran proved its claim. A green and a red
-run:
+The exit code is `0` only if every check that ran actually proved its claim. Here
+is a green run and a red one:
 
 ```console
 $ celebrimbor gate --fast
@@ -67,11 +69,12 @@ $ celebrimbor gate --fast
 
 ### `--format=agent` — the machine-consumable verdict
 
-`--format=agent` emits one JSON object derived from the same report the human
-sees, shaped so an agent loop can consume the gate's fail-closed refusals as its
-work queue. The rule is one sentence: **every red verdict becomes exactly one
-work item; a green run emits zero.** An agent loop terminates when `work_items`
-is empty.
+`--format=agent` prints one JSON object built from the same report a person sees,
+shaped so an automated agent loop can pick up the gate's refusals as its work
+list. (The gate *fails closed*: when it can't prove something is right, it stops
+and refuses rather than waving the code through.) The rule is one sentence:
+**every red result becomes exactly one work item; a green run produces none.** An
+agent loop stops when `work_items` is empty.
 
 ```console
 $ celebrimbor gate --fast --format=agent
@@ -99,49 +102,53 @@ $ celebrimbor gate --fast --format=agent
 }
 ```
 
-Two properties are load-bearing and hold by construction:
+Two things matter here, and the design guarantees them both:
 
-- **`FAIL` and `REFUSED` stay distinct.** A `FAIL` carries `found`; a `REFUSED`
-  additionally carries `refused_because` — what the harness could not establish.
-  An agent must not be able to "fix" a refusal by making the harness stop
-  looking.
-- **No trust surface.** There is no severity, score, or ranking number to
-  optimize. `blocking` is a boolean, `totals` are counts, and the only float
-  anywhere in the object is `duration_s`.
+- **A failure and a refusal stay distinct.** A `FAIL` carries `found` — the wrong
+  thing it saw. A `REFUSED` instead carries `refused_because` — what the tool
+  could not establish one way or the other. This keeps an agent from "fixing" a
+  refusal by simply making the tool stop looking.
+- **Nothing to game.** There is no severity, score, or ranking number for an agent
+  to optimize toward. `blocking` is a plain yes/no, `totals` are counts, and the
+  only decimal number anywhere in the object is `duration_s`.
 
-`SKIPPED` never becomes a work item — a skip is not a TODO — but it is listed
-under `skipped` so an agent cannot silently benefit from an obligation nobody
-opted into.
+A skipped check never becomes a work item — a skip is not a to-do. But it is
+listed under `skipped`, so an agent can't quietly benefit from a deeper check that
+nobody turned on.
 
 ### `--propose` — scaffold a falsifier for each surviving mutant
 
-A surviving mutant is the missing falsifier made concrete: a change to the code
-that *no test distinguishes from the real thing*, so the test that would kill it
-is exactly the negative proof the code is missing. `--propose` turns each new
-survivor into a human-completable scaffold — the mutant's identity, the enclosing
-code, a stub test, and the recipe to confirm the finished test actually kills the
-mutant — written to `.celebrimbor/proposals/`.
+A *falsifier* is a way the code could be caught being wrong — in practice, a test
+that fails when the code breaks. To check whether one really exists, mutation
+testing makes a tiny change to your code (a *mutant*) and watches to see if any
+test notices. A *surviving mutant* is a change no test caught — the missing
+falsifier made concrete. The test that would catch that mutant is exactly the
+proof the code is lacking. `--propose` turns each new survivor into a starting
+point you can finish by hand — the mutant's identity, the surrounding code, a stub
+test, and the steps to confirm your finished test really does catch the mutant —
+written to `.celebrimbor/proposals/`.
 
 ```bash
 $ celebrimbor gate --full --propose
 ```
 
-It is deterministic (no LLM, no tool run — it reads the survivor set the mutation
-gate already sources) and it needs a survivor source (`mutation_survivors`); with
-none, it reports *nothing to propose* and writes nothing.
+It is fully predictable (no AI model, no extra tool run — it reads the same set of
+surviving mutants the mutation check already collected), and it needs a source of
+those survivors (`mutation_survivors`). With none, it reports *nothing to propose*
+and writes nothing.
 
-A scaffold is **never a proof**. It is a dated TODO: it lands in a scratch
-directory no gate reads, it is never ratified, and its presence changes no
-verdict. Generation moves the blank page — completing the test and ratifying it
-is what moves the gate.
+A generated scaffold is **never a proof**. It is a dated to-do: it lands in a
+scratch directory no check reads, you never confirm it, and its presence changes
+no result. Generating it just gets you past the blank page — finishing the test
+and confirming it by hand is what actually moves the gate.
 
 `--version` and `-h` / `--help` are available on every command.
 
 ## `celebrimbor watch`
 
-Re-run the fast gate whenever a relevant file changes — the inner-loop companion
-to `gate --fast`, so drift surfaces the instant you introduce it instead of two
-minutes into CI.
+Re-run the fast gate whenever a file that matters changes — the companion to
+`gate --fast` while you work, so a problem shows up the instant you introduce it
+instead of two minutes into CI.
 
 ```bash
 celebrimbor watch [--root DIR]
@@ -159,16 +166,16 @@ actually depends on:
 - any `.celebrimbor/*.yaml` ledger.
 
 Everything else — a README edit, a build artifact, a compiled `.pyc` — is
-ignored, and a change is debounced until the file set stops moving, so one save
-triggers exactly one run.
+ignored. And it waits for the flurry of saves to settle before running, so one
+save triggers exactly one run.
 
-Each re-run is a **full cold fast-stage run, byte-identical to `gate --fast`**.
-That is the whole safety story: watch does not track a cached "green," so it can
-never claim green over a red gate — it re-runs the real gate and prints the real
-report, every time. There is no incremental engine to trust and no state to go
-stale. (Warm/incremental re-runs are a later, separate change; this slice is
-deliberately a cold re-run because a cold re-run is trivially identical to the
-gate it stands in for.)
+Each re-run is a **full fresh fast-stage run, identical to `gate --fast`**. That
+is the whole safety story: watch keeps no cached "green" of its own, so it can
+never claim green over a gate that is actually red — it re-runs the real gate and
+prints the real report, every time. There is no shortcut engine to trust and no
+saved state to go stale. (Faster, incremental re-runs are a later, separate
+change; this version re-runs from scratch on purpose, because a from-scratch run
+is obviously identical to the gate it stands in for.)
 
 ```console
 $ celebrimbor watch
@@ -189,23 +196,29 @@ celebrimbor watch — stopped.
 
 ## `celebrimbor ratify`
 
-Confirm surface-map rows and pin them to the current code.
+*Ratify* means: you confirm, by hand, that a function's assigned job (its role) is
+right, and that decision is locked to the code as it stands today. This command
+does that — it confirms rows in your surface map (the list of every public
+function and the job you've given each one) and pins them to the current code.
 
 ```bash
 celebrimbor ratify [MODULES...] [--all] [--root DIR]
 ```
 
-Ratification has two halves: deciding the role is your judgment; stamping the
-shape-pin is arithmetic. This does the arithmetic, so the pin is never absent.
-Naming no modules and passing no `--all` is an error — "ratify everything I have
-not looked at" is the one action nobody should take by accident.
+Confirming has two halves: deciding the job is right is *your* judgment; locking
+the decision to the code's current shape is just arithmetic. This command does the
+arithmetic, so that lock is never left off. Naming no modules and passing no
+`--all` is an error — "confirm everything I haven't actually looked at" is the one
+action nobody should take by accident.
 
 ## `celebrimbor explain`
 
-Print the role taxonomy, the capability budget, and every registered check with
-its falsifier — all derived from the same tables the gates read, so it cannot
-drift from what is enforced. It is the fastest way to see the rules a project is
-actually held to.
+Print the list of roles (the jobs a function can be assigned), the *capability*
+budget (what pieces of the outside world — clock, network, files, randomness — a
+role is allowed to reach for), and every registered check alongside its
+*falsifier* (the test that would catch it failing). All of it is read from the
+same tables the gate itself uses, so what you see can never drift from what is
+enforced. It is the fastest way to see the rules a project is actually held to.
 
 ```console
 $ celebrimbor explain
