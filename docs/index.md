@@ -16,10 +16,17 @@ celebrimbor init
 celebrimbor gate --fast
 ```
 
-> In Tolkien's tales, Celebrimbor was the Elven-smith who forged the Rings of
-> Power — and was deceived into making them with a flaw he couldn't see, by a
-> visitor who *looked* trustworthy. This tool is named for that lesson: never
-> trust a thing because it looks right. Make it prove it isn't hiding a flaw.
+> *"But the Elves were not so lightly to be caught. As soon as Sauron set the One
+> Ring upon his finger they were aware of him; and they knew him, and perceived
+> that he would be master of them, and of all that they wrought."*
+> — J.R.R. Tolkien, *The Silmarillion*, "Of the Rings of Power and the Third Age"
+
+Celebrimbor was the Elven-smith who forged the Rings of Power. Sauron came to him
+in fair form, called himself *Annatar, the Lord of Gifts*, and taught him the
+craft — and the flaw was invisible until the moment the One Ring was worn. This
+tool is named for that lesson: **a thing that looks right can carry a hidden
+flaw, and you find out too late — unless you can test for it.** celebrimbor is
+that test.
 
 ---
 
