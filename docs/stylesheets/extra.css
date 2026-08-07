@@ -1,94 +1,106 @@
 /* ==========================================================================
-   celebrimbor — the visual identity of an Elven-smith's workshop.
-   Celebrimbor forged the Rings of Power in Eregion, the land of holly. The
-   palette is drawn from that world: holly-green and parchment by day, a
-   star-lit forge by night, with burnished gold (the rings, the forge-fire) and
-   mithril-silver as the two metals. Cinzel — a face cut in the manner of Roman
-   inscriptions — carries the headings like letters graven in a ring; EB
-   Garamond sets the body like a page from a tome.
+   celebrimbor — the workshop of a techno-Elven smith, circa the Second Age
+   and 2026 at once. Cinzel graves the headings like runes on a ring; EB
+   Garamond sets the body like a page from a tome; JetBrains Mono, tracked and
+   uppercased, is the holographic UI layer — the labels on the smith's console.
+   Two metals: burnished GOLD (the rings, the forge-fire) and MITHRIL-CYAN (the
+   glow of the working). Parchment-and-mithril by day; a star-vault forge by
+   night, lit by a faint circuit-grid.
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&display=swap');
 
 /* --------------------------------------------------------------------------
-   Palette — light: "Eregion by day", a parchment manuscript.
+   Palette — light: "mithril daylight", a cool, luminous workshop.
    -------------------------------------------------------------------------- */
 [data-md-color-scheme="default"] {
-  --forge-gold:        #8f6b1e;   /* legible gold for text/links on parchment */
-  --forge-gold-bright: #b8912f;   /* rules, flourishes, hovers */
-  --mithril:           #3f6f65;   /* the second metal, teal-silver */
-  --holly:             #1f3d33;   /* deep evergreen — the header, headings */
-  --parchment:         #f4eee1;
-  --parchment-raised:  #fbf7ee;
-  --ink:               #2b2a24;
-  --ink-muted:         #6b6656;
-  --hairline:          #ddd3bd;
+  --gold:        #977216;
+  --gold-bright: #b8912f;
+  --mithril:     #1f8f7d;   /* the cyan working-glow, legible on light */
+  --mithril-dim: #2c7a6d;
+  --holly:       #17352c;
+  --bg:          #edf1ee;
+  --raised:      #f8fbf9;
+  --glass:       rgba(248, 251, 249, .72);
+  --ink:         #1c2521;
+  --ink-muted:   #5f6f68;
+  --hairline:    #d3ddd6;
 
   --md-primary-fg-color:        var(--holly);
-  --md-primary-fg-color--light: #2c5849;
-  --md-primary-fg-color--dark:  #163028;
-  --md-accent-fg-color:         var(--forge-gold-bright);
+  --md-primary-fg-color--light: #245647;
+  --md-primary-fg-color--dark:  #112a22;
+  --md-accent-fg-color:         var(--mithril);
 
-  --md-default-bg-color:      var(--parchment);
-  --md-default-fg-color:      var(--ink);
-  --md-default-fg-color--light: var(--ink-muted);
-  --md-default-fg-color--lighter: #8b8574;
-  --md-typeset-color:         var(--ink);
-  --md-typeset-a-color:       var(--forge-gold);
+  --md-default-bg-color:          var(--bg);
+  --md-default-fg-color:          var(--ink);
+  --md-default-fg-color--light:   var(--ink-muted);
+  --md-default-fg-color--lighter: #86928b;
+  --md-typeset-color:             var(--ink);
+  --md-typeset-a-color:           var(--gold);
 
-  --md-code-bg-color:   #efe8d8;
-  --md-code-fg-color:   #43413a;
+  --md-code-bg-color: #e6ece8;
+  --md-code-fg-color: #34423c;
 
-  --elf-page-glow: radial-gradient(1200px 480px at 50% -8%,
-                     rgba(184,145,47,.10), transparent 70%);
+  --elf-glow: radial-gradient(1200px 460px at 50% -10%,
+                rgba(31,143,125,.10), transparent 66%),
+              radial-gradient(900px 380px at 84% 2%,
+                rgba(184,145,47,.09), transparent 70%);
+  --elf-grid: none;
 }
 
 /* --------------------------------------------------------------------------
-   Palette — dark ("slate"): "the forge under the stars".
+   Palette — dark ("slate"): "the star-vault forge".
    -------------------------------------------------------------------------- */
 [data-md-color-scheme="slate"] {
-  --forge-gold:        #d8b24c;
-  --forge-gold-bright: #e6c469;
-  --mithril:           #8fc7ba;
-  --holly:             #0b100e;
-  --parchment:         #0e1512;   /* green-black twilight */
-  --parchment-raised:  #161f1a;
-  --ink:               #dfe6df;   /* mithril-silvered text */
-  --ink-muted:         #94a89e;
-  --hairline:          #26332c;
+  --gold:        #e6c25c;
+  --gold-bright: #f2d477;
+  --mithril:     #63e6d2;   /* the glow of the working */
+  --mithril-dim: #3fbfac;
+  --holly:       #070c0a;
+  --bg:          #080d0c;
+  --raised:      #121a17;
+  --glass:       rgba(18, 26, 23, .55);
+  --ink:         #dfe8e4;
+  --ink-muted:   #8fa79d;
+  --hairline:    #21332c;
 
-  --md-hue: 155;
+  --md-hue: 160;
 
-  --md-primary-fg-color:        #0b100e;
-  --md-primary-fg-color--light: #16221c;
-  --md-primary-fg-color--dark:  #070a08;
-  --md-accent-fg-color:         var(--forge-gold-bright);
+  --md-primary-fg-color:        #070c0a;
+  --md-primary-fg-color--light: #101a16;
+  --md-primary-fg-color--dark:  #040706;
+  --md-accent-fg-color:         var(--mithril);
 
-  --md-default-bg-color:      var(--parchment);
-  --md-default-fg-color:      var(--ink);
-  --md-default-fg-color--light: var(--ink-muted);
-  --md-default-fg-color--lighter: #6f857b;
-  --md-typeset-color:         var(--ink);
-  --md-typeset-a-color:       var(--forge-gold);
+  --md-default-bg-color:          var(--bg);
+  --md-default-fg-color:          var(--ink);
+  --md-default-fg-color--light:   var(--ink-muted);
+  --md-default-fg-color--lighter: #6b8177;
+  --md-typeset-color:             var(--ink);
+  --md-typeset-a-color:           var(--gold);
 
-  --md-code-bg-color:   #131b16;
-  --md-code-fg-color:   #cdd8cf;
+  --md-code-bg-color: #0d1512;
+  --md-code-fg-color: #cbd8d1;
 
-  --elf-page-glow: radial-gradient(1100px 520px at 50% -10%,
-                     rgba(216,178,76,.12), transparent 68%),
-                   radial-gradient(700px 380px at 82% 4%,
-                     rgba(143,199,186,.06), transparent 70%);
+  --elf-glow: radial-gradient(1100px 520px at 50% -12%,
+                rgba(99,230,210,.10), transparent 64%),
+              radial-gradient(760px 420px at 82% 3%,
+                rgba(230,194,92,.10), transparent 70%);
+  /* a faint circuit-grid, like starlight caught in a lattice */
+  --elf-grid:
+    linear-gradient(rgba(99,230,210,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,230,210,.035) 1px, transparent 1px);
 }
 
 /* --------------------------------------------------------------------------
-   Typography — Cinzel for the graven headings, Garamond for the tome.
+   Typography — three faces: graven, tome, console.
    -------------------------------------------------------------------------- */
 body {
   --md-text-font-family: "EB Garamond", "Iowan Old Style", Palatino, Georgia, serif;
+  --elf-console: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 }
 
 .md-typeset {
-  font-size: 0.86rem;      /* Garamond runs small; give it room */
+  font-size: 0.86rem;
   line-height: 1.72;
 }
 
@@ -104,206 +116,245 @@ body {
 [data-md-color-scheme="slate"] .md-typeset h1,
 [data-md-color-scheme="slate"] .md-typeset h2,
 [data-md-color-scheme="slate"] .md-typeset h3 {
-  color: #e8ddc4;          /* warm silver-gold on the dark forge */
+  color: #ece1c6;
 }
 
 .md-typeset h1 {
   font-weight: 700;
-  letter-spacing: .04em;
-  color: var(--forge-gold);
+  letter-spacing: .045em;
+  color: var(--gold);
 }
 [data-md-color-scheme="slate"] .md-typeset h1 {
-  color: var(--forge-gold);
-  text-shadow: 0 0 26px rgba(216,178,76,.18);   /* a faint forge-glow */
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(230,194,92,.22);
 }
 
 .md-typeset h2 {
   margin-top: 2.4em;
-  padding-bottom: .28em;
+  padding-bottom: .3em;
   border-bottom: 1px solid var(--hairline);
 }
+/* a small mithril tick before every H2 — the console's cursor */
+.md-typeset h2::before {
+  content: "";
+  display: inline-block;
+  width: .5em; height: .5em;
+  margin-right: .6em;
+  vertical-align: .12em;
+  background: var(--mithril);
+  box-shadow: 0 0 10px var(--mithril);
+  transform: rotate(45deg);   /* a faceted mithril node */
+}
 
-/* Section title on the home page — the workshop's name over its doors. */
 .md-typeset h1#celebrimbor {
   font-size: 2.9rem;
-  letter-spacing: .08em;
+  letter-spacing: .09em;
 }
 
 /* --------------------------------------------------------------------------
-   The page ground — a faint forge-glow washing down from the top.
+   The page ground — forge-glow plus a faint lattice in the dark.
    -------------------------------------------------------------------------- */
 .md-main {
-  background-image: var(--elf-page-glow);
-  background-repeat: no-repeat;
+  background-image: var(--elf-glow), var(--elf-grid);
+  background-size: auto, auto, 46px 46px, 46px 46px;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
 }
 
-/* Header & nav — the holly-green lintel over the door. */
+/* Header & tabs — a mithril-lit lintel, labelled in the console face. */
 .md-header {
-  border-bottom: 1px solid rgba(184,145,47,.28);
+  border-bottom: 1px solid rgba(99,230,210,.22);
+  box-shadow: 0 1px 0 rgba(230,194,92,.12);
 }
-.md-header__title {
-  font-family: "Cinzel", Georgia, serif;
-  letter-spacing: .1em;
+.md-header__title,
+.md-tabs__link {
+  font-family: var(--elf-console);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-size: .7rem;
+  font-weight: 500;
+}
+.md-header__title { font-size: .82rem; }
+.md-tabs {
+  border-bottom: 1px solid rgba(230,194,92,.12);
+}
+
+/* Nav — the console index, in mono. */
+.md-nav {
+  font-family: var(--elf-console);
+  font-size: .64rem;
+  letter-spacing: .04em;
+}
+.md-nav__title { text-transform: uppercase; letter-spacing: .14em; }
+.md-nav__item .md-nav__link--active {
+  color: var(--gold);
   font-weight: 600;
 }
-.md-tabs {
-  border-bottom: 1px solid rgba(184,145,47,.14);
-}
+[data-md-color-scheme="slate"] .md-nav__link:hover,
+[data-md-color-scheme="slate"] .md-nav__link:focus { color: var(--mithril); }
 
 /* --------------------------------------------------------------------------
-   Links — gold, underlined only on hover like ink catching the light.
+   Links — gold, with a mithril underglow on hover.
    -------------------------------------------------------------------------- */
 .md-typeset a {
   color: var(--md-typeset-a-color);
-  text-decoration-color: rgba(184,145,47,.35);
+  text-decoration-color: rgba(153,114,22,.4);
   text-underline-offset: .18em;
+  transition: color .16s ease, text-shadow .16s ease;
 }
 .md-typeset a:hover {
-  color: var(--forge-gold-bright);
-  text-decoration-color: currentColor;
+  color: var(--gold-bright);
+  text-decoration-color: var(--mithril);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--mithril) 55%, transparent);
 }
 
 /* --------------------------------------------------------------------------
-   Decorative rule — a graven line with a ring-diamond at its centre.
-   Used for the `---` dividers that separate movements on a page.
+   Dividers — a luminous gold→mithril seam with a travelling shimmer.
    -------------------------------------------------------------------------- */
 .md-typeset hr {
   border: none;
   height: 1.4em;
-  margin: 2.6em 0;
-  background: none;
+  margin: 2.8em 0;
   position: relative;
 }
 .md-typeset hr::before {
   content: "";
   position: absolute;
-  top: 50%;
-  left: 0; right: 0;
+  top: 50%; left: 0; right: 0;
   height: 1px;
   background: linear-gradient(90deg,
     transparent,
-    var(--forge-gold-bright) 22%,
-    var(--forge-gold-bright) 78%,
+    var(--gold-bright) 20%,
+    var(--mithril) 50%,
+    var(--gold-bright) 80%,
     transparent);
-  opacity: .5;
+  opacity: .6;
+  background-size: 200% 100%;
+  animation: elf-shimmer 6s linear infinite;
 }
 .md-typeset hr::after {
-  content: "\25C8";        /* ◈ — a faceted ring-stone */
+  content: "\25C8";
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  color: var(--forge-gold-bright);
+  color: var(--gold-bright);
   background: var(--md-default-bg-color);
   padding: 0 .5em;
-  font-size: .9em;
+  font-size: .95em;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--mithril) 60%, transparent);
 }
+@keyframes elf-shimmer { to { background-position: 200% 0; } }
 
 /* --------------------------------------------------------------------------
-   Blockquotes — an illuminated margin note in the smith's own hand.
+   Blockquotes — an illuminated margin note, lit from the left.
    -------------------------------------------------------------------------- */
 .md-typeset blockquote {
-  border-left: 3px solid var(--forge-gold);
+  border-left: 2px solid var(--gold);
+  box-shadow: -1px 0 12px -4px var(--mithril);
   background: linear-gradient(90deg,
-    color-mix(in srgb, var(--forge-gold) 8%, transparent), transparent 60%);
+    color-mix(in srgb, var(--mithril) 7%, transparent), transparent 62%);
   color: var(--md-default-fg-color);
   font-style: italic;
+  border-radius: 0 4px 4px 0;
 }
 
 /* --------------------------------------------------------------------------
-   Buttons — the primary is a ring of gold; the secondary, its outline.
+   Buttons — console keys: mono, tracked, gold with a mithril charge on hover.
    -------------------------------------------------------------------------- */
 .md-typeset .md-button {
   border-radius: 2px;
-  border-color: var(--forge-gold);
-  color: var(--forge-gold);
-  font-family: "Cinzel", Georgia, serif;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: var(--elf-console);
   font-weight: 500;
-  letter-spacing: .04em;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .14em;
   transition: all .18s ease;
 }
 .md-typeset .md-button:hover {
-  background: var(--forge-gold);
-  border-color: var(--forge-gold);
-  color: var(--md-default-bg-color);
-  box-shadow: 0 0 22px -6px var(--forge-gold);
+  background: transparent;
+  border-color: var(--mithril);
+  color: var(--mithril);
+  box-shadow: 0 0 20px -4px var(--mithril), inset 0 0 14px -8px var(--mithril);
 }
 .md-typeset .md-button--primary {
-  background: var(--forge-gold);
-  border-color: var(--forge-gold);
+  background: var(--gold);
+  border-color: var(--gold);
   color: var(--md-default-bg-color);
 }
-[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
-  color: #0e1512;
+.md-typeset .md-button--primary:hover {
+  background: var(--gold-bright);
+  border-color: var(--gold-bright);
+  color: var(--md-default-bg-color);
+  box-shadow: 0 0 24px -4px var(--gold);
 }
 
 /* --------------------------------------------------------------------------
-   Cards (the two-family grid) — worktables in the smith's hall.
+   Cards — forged-glass worktables with a gold→mithril rim.
    -------------------------------------------------------------------------- */
 .md-typeset .grid.cards > ul > li,
 .md-typeset .grid > .card {
-  border: 1px solid var(--hairline);
-  border-radius: 4px;
-  background: var(--parchment-raised);
-  transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background:
+    linear-gradient(var(--glass), var(--glass)) padding-box,
+    linear-gradient(135deg, var(--gold), var(--mithril)) border-box;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 .md-typeset .grid.cards > ul > li:hover {
-  border-color: var(--forge-gold);
-  box-shadow: 0 10px 34px -22px var(--forge-gold);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px -22px var(--mithril), 0 0 0 1px color-mix(in srgb, var(--mithril) 30%, transparent);
 }
 
 /* --------------------------------------------------------------------------
-   Inline code & code blocks — runes on the workbench.
+   Code — runes on the bench.
    -------------------------------------------------------------------------- */
-.md-typeset code {
-  border-radius: 3px;
-  font-size: .82em;
-}
+.md-typeset code { border-radius: 3px; font-size: .8em; }
 .md-typeset pre > code {
   border: 1px solid var(--hairline);
-  border-radius: 4px;
+  border-radius: 5px;
+}
+[data-md-color-scheme="slate"] .md-typeset pre > code {
+  box-shadow: inset 0 0 30px -20px var(--mithril);
 }
 
-/* Tables — a ledger ruled in gold hairlines. */
+/* Tables — a ledger with a mithril-tinted header row, labels in mono. */
 .md-typeset table:not([class]) {
   border: 1px solid var(--hairline);
-  border-radius: 4px;
+  border-radius: 6px;
   overflow: hidden;
 }
 .md-typeset table:not([class]) th {
-  font-family: "Cinzel", Georgia, serif;
+  font-family: var(--elf-console);
   font-weight: 600;
-  font-size: .8em;
-  letter-spacing: .03em;
-  background: color-mix(in srgb, var(--forge-gold) 12%, var(--parchment-raised));
+  font-size: .64rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  background: color-mix(in srgb, var(--mithril) 12%, var(--raised));
   color: var(--holly);
 }
-[data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
-  color: #e8ddc4;
-}
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) th { color: #ece1c6; }
 
-/* Admonitions keep Material's shape; only their accent turns to gold/mithril
-   so a "note" reads like a scribe's aside, not a warning klaxon. */
+/* Admonitions — titles in the console face; the accent turns gold/mithril. */
 .md-typeset .admonition,
 .md-typeset details {
-  border-radius: 4px;
+  border-radius: 6px;
   border-left-width: 3px;
 }
-
-/* Footer — the closing seal. */
-.md-footer-meta {
-  border-top: 1px solid rgba(184,145,47,.2);
+.md-typeset .admonition-title,
+.md-typeset summary {
+  font-family: var(--elf-console);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .72em;
 }
 
-/* A touch of gold on the search field and active nav, so the whole hall glows
-   by the same firelight. */
-[data-md-color-scheme="slate"] .md-nav__link--active,
-[data-md-color-scheme="slate"] .md-nav__link:focus,
-[data-md-color-scheme="slate"] .md-nav__link:hover {
-  color: var(--forge-gold);
-}
-.md-nav__item .md-nav__link--active {
-  color: var(--forge-gold);
-  font-weight: 600;
+/* Search & footer — the same firelight through the whole hall. */
+.md-search__input { font-family: var(--elf-console); letter-spacing: .04em; }
+.md-footer-meta { border-top: 1px solid rgba(230,194,92,.2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .md-typeset hr::before { animation: none; }
 }
